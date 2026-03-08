@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AgapayAlert — Mobile</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --red:#E8271A;--red-dark:#B01E13;
+  --orange:#F97316;--yellow:#FBBF24;--green:#22C55E;--blue:#3B82F6;--sky:#0EA5E9;--purple:#a78bfa;
+  --bg:#0A0C0F;--bg2:#111418;--bg3:#181C22;--bg4:#1E242C;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --text:#F0F2F5;--muted:#8B95A1;--muted2:#5A6472;
+  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+  --nav-h:60px;--sb:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:#000;}
+body{color:var(--text);font-family:var(--fb);font-size:14px;}
+
+/* ══ APP SHELL ══ */
+#app{position:relative;width:100%;max-width:430px;height:100%;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;}
+
+/* STATUS BAR */
+.sb{height:40px;background:var(--bg2);display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0;border-bottom:1px solid var(--border);}
+.sb-time{font-family:var(--fm);font-size:12px;font-weight:500;}
+.sb-icons{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.sig{display:flex;align-items:flex-end;gap:1.5px;}
+.sig span{background:var(--text);border-radius:1px;width:3px;}
+.sig span:nth-child(1){height:4px;}
+.sig span:nth-child(2){height:6px;}
+.sig span:nth-child(3){height:9px;}
+.sig span:nth-child(4){height:12px;}
+.bat{width:22px;height:11px;border:1.5px solid var(--text);border-radius:2px;position:relative;display:flex;align-items:center;padding:1.5px;}
+.bat::after{content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:2px;height:5px;background:var(--text);border-radius:0 1px 1px 0;}
+.bat-f{height:100%;width:75%;background:var(--green);border-radius:1px;}
+
+/* SCREEN WRAP + SCREENS */
+.sw{flex:1;overflow:hidden;position:relative;}
+.scr{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:none;flex-direction:column;padding-bottom:calc(var(--nav-h) + var(--sb) + 8px);}
+.scr.active{display:flex;}
+
+/* BOTTOM NAV */
+.bnav{height:var(--nav-h);background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:stretch;flex-shrink:0;padding-bottom:var(--sb);}
+.ntab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;border:none;background:transparent;color:var(--muted2);font-family:var(--fb);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;transition:color .2s;position:relative;}
+.ntab.active{color:var(--red);}
+.ntab .ni{font-size:20px;line-height:1;}
+.nbadge{position:absolute;top:5px;right:calc(50% - 18px);background:var(--red);color:#fff;font-size:8px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--fm);padding:0 4px;}
+
+/* LOGIN */
+#scr-login{background:var(--bg);align-items:center;justify-content:center;padding:20px 22px;padding-bottom:40px;}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.ll-icon{width:50px;height:50px;background:var(--red);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;font-family:var(--fd);color:#fff;}
+.ll-text{font-family:var(--fd);font-size:26px;font-weight:800;}
+.login-tag{font-size:12px;color:var(--muted);margin-bottom:26px;text-align:center;}
+.role-sw{display:flex;background:var(--bg3);border-radius:10px;padding:3px;gap:2px;margin-bottom:20px;width:100%;}
+.rsw-btn{flex:1;padding:9px 6px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-size:11px;font-family:var(--fb);font-weight:700;cursor:pointer;transition:all .2s;text-align:center;}
+.rsw-btn.active{background:var(--red);color:#fff;}
+.fl{display:flex;flex-direction:column;width:100%;}
+.fl-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:13px 14px;color:var(--text);font-family:var(--fb);font-size:14px;outline:none;transition:border-color .2s;margin-bottom:12px;}
+.fi:focus{border-color:var(--red);}
+.ferr{background:rgba(232,39,26,.1);border:1px solid rgba(232,39,26,.3);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:12px;display:none;}
+.ferr.show{display:block;}
+.lbtn{width:100%;background:var(--red);border:none;border-radius:10px;padding:14px;color:#fff;font-family:var(--fd);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.lbtn:active{background:var(--red-dark);}
+.lbtn-sec{width:100%;background:transparent;border:1px solid var(--border2);border-radius:10px;padding:13px;color:var(--muted);font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;}
+.demo-note{margin-top:14px;font-size:11px;color:var(--muted2);text-align:center;background:var(--bg4);border-radius:8px;padding:10px 12px;font-family:var(--fm);line-height:1.7;}
+.demo-note strong{color:var(--text);}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spn{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+
+/* PAGE HEADER */
+.ph{padding:13px 14px 10px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;flex-shrink:0;}
+.ph-row{display:flex;align-items:center;justify-content:space-between;}
+.pt{font-family:var(--fd);font-size:17px;font-weight:800;}
+.ps{font-size:11px;color:var(--muted);margin-top:2px;}
+.pb{padding:12px 14px;flex:1;}
+
+/* ALERTS STRIP */
+.astrip{background:rgba(232,39,26,.1);border:1px solid rgba(232,39,26,.28);border-radius:10px;padding:9px 11px;font-size:11px;color:var(--red);font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:12px;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.4);}}
+.ldot{width:7px;height:7px;border-radius:50%;flex-shrink:0;animation:pulse 1.5s infinite;}
+
+/* STATS 2-COL */
+.stats2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+.stc{background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:12px;position:relative;overflow:hidden;}
+.stc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stc.red::before{background:var(--red);}
+.stc.or::before{background:var(--orange);}
+.stc.gr::before{background:var(--green);}
+.stc.bl::before{background:var(--sky);}
+.stc .si{font-size:16px;margin-bottom:3px;}
+.stc .sl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.stc .sv{font-family:var(--fd);font-size:24px;font-weight:800;line-height:1.1;margin:3px 0;}
+.stc .sm{font-size:10px;color:var(--muted2);}
+
+/* CARDS */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:11px;margin-bottom:11px;overflow:hidden;}
+.ch{padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ct{font-family:var(--fd);font-size:13px;font-weight:700;}
+.cb{padding:11px 13px;}
+
+/* QUICK GRID */
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.qbtn{background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:all .15s;}
+.qbtn:active{transform:scale(.96);background:var(--bg4);}
+.qi{font-size:26px;}
+.ql{font-size:11px;font-weight:700;color:var(--text);font-family:var(--fd);}
+.qs{font-size:9px;color:var(--muted);text-align:center;line-height:1.3;}
+
+/* SOS BTN */
+.sosbtn{width:100%;background:var(--red);border:none;border-radius:11px;padding:14px;color:#fff;font-family:var(--fd);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:12px;box-shadow:0 4px 22px rgba(232,39,26,.32);transition:all .15s;letter-spacing:.03em;}
+.sosbtn:active{transform:scale(.97);}
+
+/* NOTICE ITEMS */
+.ni-item{background:var(--bg4);border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:9px 11px;margin-bottom:7px;}
+.ni-item.warn{border-left-color:var(--orange);}
+.ni-item.info{border-left-color:var(--sky);}
+.ni-item.green{border-left-color:var(--green);}
+.ni-t{font-size:12px;font-weight:700;margin-bottom:2px;}
+.ni-m{font-size:10px;color:var(--muted);}
+
+/* INCIDENTS */
+.inc-row{display:flex;align-items:flex-start;gap:9px;padding:11px;background:var(--bg4);border-radius:10px;border:1px solid var(--border);margin-bottom:7px;transition:border-color .15s;}
+.inc-row:active{border-color:var(--border2);}
+.inc-ic{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.inc-ic.flood{background:rgba(59,130,246,.15);}
+.inc-ic.typhoon{background:rgba(139,92,246,.15);}
+.inc-ic.fire{background:rgba(249,115,22,.15);}
+.inc-ic.medical{background:rgba(34,197,94,.15);}
+.inc-ic.other{background:rgba(139,149,161,.15);}
+.inc-meta{flex:1;min-width:0;}
+.inc-ttl{font-size:12px;font-weight:700;margin-bottom:2px;}
+.inc-loc{font-size:10px;color:var(--muted);}
+.inc-tm{font-size:10px;color:var(--muted2);margin-top:2px;}
+.inc-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+
+/* BADGES */
+.bx{display:inline-flex;align-items:center;padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700;font-family:var(--fm);}
+.bx.crit{background:rgba(232,39,26,.15);color:var(--red);border:1px solid rgba(232,39,26,.3);}
+.bx.high{background:rgba(249,115,22,.15);color:var(--orange);border:1px solid rgba(249,115,22,.3);}
+.bx.med{background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid rgba(251,191,36,.3);}
+.bx.low{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+.bx.open{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25);}
+.bx.full{background:rgba(232,39,26,.12);color:var(--red);border:1px solid rgba(232,39,26,.25);}
+.bx.near{background:rgba(249,115,22,.12);color:var(--orange);border:1px solid rgba(249,115,22,.25);}
+.bx.pend{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.25);}
+.bx.info{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.25);}
+.tag{background:rgba(232,39,26,.1);color:var(--red);border:1px solid rgba(232,39,26,.25);border-radius:6px;padding:2px 8px;font-size:9px;font-weight:700;font-family:var(--fm);}
+.tag.gr{background:rgba(34,197,94,.1);color:var(--green);border-color:rgba(34,197,94,.25);}
+.tag.bl{background:rgba(59,130,246,.1);color:var(--sky);border-color:rgba(59,130,246,.25);}
+
+/* FORMS */
+.fgrp{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.flbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.finp,.fsel,.ftxt{background:var(--bg4);border:1px solid var(--border2);border-radius:9px;padding:11px 12px;color:var(--text);font-family:var(--fb);font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+.finp:focus,.fsel:focus,.ftxt:focus{border-color:var(--red);}
+.fsel{cursor:pointer;}option{background:var(--bg4);}
+.ftxt{resize:vertical;min-height:80px;}
+.chk-grid{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;}
+.chk-item{display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;background:var(--bg4);border:1px solid var(--border);border-radius:7px;padding:6px 8px;}
+.chk-item input{accent-color:var(--red);}
+.photo-drop{border:1.5px dashed var(--border2);border-radius:9px;padding:14px;text-align:center;cursor:pointer;color:var(--muted);font-size:11px;transition:border-color .2s;}
+.photo-drop:active{border-color:var(--red);}
+.fbtn{width:100%;background:var(--red);border:none;border-radius:10px;padding:13px;color:#fff;font-family:var(--fd);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;}
+.fbtn:active{background:var(--red-dark);}
+.fbtn.gr{background:var(--green);}
+.fbtn.bl{background:var(--blue);}
+.fbtn.or{background:var(--orange);}
+.fbtn.ghost{background:var(--bg4);border:1px solid var(--border2);color:var(--muted);}
+.fbtn.ghost:active{background:var(--bg3);}
+.fbtn.sm{padding:8px 12px;font-size:11px;}
+
+/* SEC LABEL */
+.slbl{font-size:9px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;padding:4px 0 8px;margin-top:2px;}
+
+/* EVAC CARD */
+.evac-c{background:var(--bg3);border:1px solid var(--border);border-radius:11px;margin-bottom:10px;overflow:hidden;}
+.evac-h{padding:11px 13px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.evac-n{font-size:13px;font-weight:700;font-family:var(--fd);margin-bottom:2px;}
+.evac-a{font-size:10px;color:var(--muted);}
+.evac-pbar{height:5px;background:var(--bg4);margin:0 13px 8px;border-radius:3px;overflow:hidden;}
+.evac-pfill{height:100%;border-radius:3px;transition:width .5s;}
+.evac-stats{display:flex;gap:0;padding:8px 13px;border-top:1px solid var(--border);background:var(--bg4);}
+.evac-st{flex:1;text-align:center;}
+.evac-sv{font-family:var(--fd);font-size:15px;font-weight:700;}
+.evac-sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.evac-btns{display:flex;gap:7px;padding:9px 13px;}
+.ebtn{flex:1;padding:9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--fb);transition:all .15s;}
+.ebtn.pr{background:var(--red);color:#fff;}
+.ebtn.sc{background:var(--bg4);border:1px solid var(--border2);color:var(--muted);}
+.ebtn:active{transform:scale(.97);}
+
+/* TAB SWITCHER */
+.tsw{display:flex;background:var(--bg3);border-radius:9px;padding:3px;gap:2px;margin-bottom:12px;}
+.tsw-btn{flex:1;padding:7px 5px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-size:10px;font-family:var(--fb);font-weight:700;cursor:pointer;transition:all .2s;text-align:center;}
+.tsw-btn.active{background:var(--bg4);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+
+/* ASSIGN CARD */
+.asgn-card{background:var(--bg4);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:9px;}
+.asgn-hd{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.asgn-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,var(--orange),var(--red));}
+.asgn-nm{font-size:12px;font-weight:700;font-family:var(--fd);}
+.asgn-rl{font-size:10px;color:var(--muted);}
+.asgn-det{font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.asgn-acts{display:flex;gap:6px;}
+.abtn{flex:1;padding:8px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--fb);transition:all .15s;}
+.abtn.acc{background:var(--green);color:#fff;}
+.abtn.nav{background:var(--sky);color:#fff;}
+.abtn.rej{background:var(--bg3);border:1px solid var(--border2);color:var(--muted);}
+.abtn.or{background:var(--orange);color:#fff;}
+.abtn:active{transform:scale(.97);}
+
+/* DISPATCH CARD */
+.dsp-card{background:var(--bg4);border:1px solid var(--border);border-radius:11px;padding:11px;margin-bottom:8px;}
+.dsp-h{display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;}
+.dsp-ic{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:rgba(232,39,26,.1);}
+.dsp-acts{display:flex;gap:6px;}
+.dsp-btn{flex:1;padding:8px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--fb);}
+.dsp-btn.pr{background:var(--red);color:#fff;}
+.dsp-btn.sc{background:var(--bg3);border:1px solid var(--border2);color:var(--muted);}
+.dsp-btn.gr{background:var(--green);color:#fff;}
+.dsp-btn:active{transform:scale(.97);}
+
+/* PROFILE */
+.prof-h{display:flex;flex-direction:column;align-items:center;padding:22px 14px 14px;border-bottom:1px solid var(--border);}
+.prof-av{width:70px;height:70px;background:linear-gradient(135deg,var(--red),var(--orange));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;margin-bottom:10px;font-family:var(--fd);}
+.prof-nm{font-family:var(--fd);font-size:17px;font-weight:800;margin-bottom:4px;}
+.prof-rb{background:rgba(232,39,26,.12);border:1px solid rgba(232,39,26,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--red);}
+.pmi{display:flex;align-items:center;gap:11px;padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
+.pmi:active{background:var(--bg3);}
+.pmi-ic{font-size:19px;width:28px;text-align:center;}
+.pmi-lbl{font-size:13px;font-weight:500;flex:1;}
+.pmi-arrow{color:var(--muted2);font-size:15px;}
+
+/* SWITCH */
+.sw-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);}
+.sw-lbl{font-size:13px;font-weight:500;}
+.sw-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+.tgl{position:relative;width:42px;height:23px;flex-shrink:0;}
+.tgl input{opacity:0;width:0;height:0;}
+.sldr{position:absolute;inset:0;background:var(--bg4);border:1px solid var(--border2);border-radius:12px;cursor:pointer;transition:.2s;}
+.sldr::before{content:'';position:absolute;left:3px;top:50%;transform:translateY(-50%);width:15px;height:15px;background:var(--muted);border-radius:50%;transition:.2s;}
+input:checked+.sldr{background:rgba(34,197,94,.2);border-color:var(--green);}
+input:checked+.sldr::before{transform:translate(19px,-50%);background:var(--green);}
+
+/* MAP */
+.map-ph{background:var(--bg3);border-radius:11px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border);}
+.map-inner{width:100%;height:220px;background:linear-gradient(135deg,#0f1a2e,#0a1520,#0d1f30);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(14,165,233,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,.05) 1px,transparent 1px);background-size:26px 26px;}
+.map-roads::before{content:'';position:absolute;top:40%;left:0;right:0;height:2px;background:rgba(14,165,233,.12);}
+.map-roads::after{content:'';position:absolute;top:0;bottom:0;left:45%;width:2px;background:rgba(14,165,233,.12);}
+.mpin{position:absolute;font-size:22px;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.mpin{animation:bounce 2s infinite;}
+.map-ctrl{position:absolute;bottom:10px;right:10px;display:flex;flex-direction:column;gap:3px;}
+.mc-btn{width:26px;height:26px;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;}
+.leaflet-map{height:240px;border-radius:11px;overflow:hidden;margin-bottom:12px;}
+
+/* SMS LOG */
+.sms-item{background:var(--bg4);border:1px solid var(--border);border-radius:9px;padding:11px;margin-bottom:8px;}
+.sms-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.sms-type{font-size:10px;font-weight:700;font-family:var(--fm);}
+.sms-type.alert{color:var(--red);}
+.sms-type.warning{color:var(--orange);}
+.sms-type.info{color:var(--sky);}
+.sms-tm{font-size:10px;color:var(--muted2);font-family:var(--fm);}
+.sms-body{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:5px;}
+.sms-rcpt{font-size:10px;color:var(--green);}
+.sms-del{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:11px;}
+
+/* GEO LIST */
+.geo-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:9px;border:1px solid var(--border);margin-bottom:7px;}
+.geo-ic{font-size:22px;flex-shrink:0;}
+.geo-info{flex:1;min-width:0;}
+.geo-nm{font-size:12px;font-weight:700;margin-bottom:1px;}
+.geo-tp{font-size:10px;color:var(--muted);}
+.geo-coords{font-family:var(--fm);font-size:10px;color:var(--sky);}
+
+/* NOTIF TOGGLE */
+.ntgl{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+.ntgl-lbl{font-size:12px;font-weight:600;}
+.ntgl-sub{font-size:10px;color:var(--muted);}
+.ntgl-btn{width:40px;height:22px;border-radius:11px;position:relative;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.ntgl-btn.on{background:var(--red);}
+.ntgl-btn.off{background:var(--bg4);border:1px solid var(--border2);}
+.ntgl-dot{width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:3px;transition:all .2s;}
+.ntgl-btn.on .ntgl-dot{right:2px;}
+.ntgl-btn.off .ntgl-dot{left:2px;background:var(--muted);}
+
+/* OFFLINE BANNER */
+.offl-banner{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:10px 12px;display:flex;align-items:flex-start;gap:8px;font-size:12px;margin-bottom:12px;}
+.offl-banner.warn{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.2);color:var(--yellow);}
+.offl-banner h4{font-size:13px;font-weight:700;margin-bottom:3px;}
+.offl-banner p{font-size:11px;color:var(--muted);line-height:1.5;}
+
+/* CAPACITY BAR */
+.cap-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin:4px 0;}
+.cap-fill{height:100%;border-radius:3px;transition:width .5s;}
+
+/* SYNC QUEUE */
+.sq-item{display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--bg4);border-radius:7px;border:1px solid var(--border);margin-bottom:6px;}
+.sq-dot{width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0;}
+.sq-lbl{flex:1;font-size:11px;}
+.sq-tm{font-size:9px;color:var(--muted2);font-family:var(--fm);}
+
+/* STORAGE */
+.stor-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+.stor-c{text-align:center;padding:11px;background:var(--bg4);border-radius:10px;border:1px solid var(--border);}
+.stor-ic{font-size:18px;margin-bottom:5px;}
+.stor-v{font-family:var(--fm);font-size:14px;font-weight:700;}
+.stor-l{font-size:9px;color:var(--muted);}
+.stor-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin:8px 0;}
+.stor-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--blue));border-radius:3px;transition:width .5s;}
+
+/* CAPABILITY ITEMS */
+.cap-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.cap-item:last-child{border-bottom:none;}
+.cap-ic{font-size:20px;flex-shrink:0;margin-top:2px;}
+.cap-title{font-size:12px;font-weight:700;margin-bottom:3px;}
+.cap-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+
+/* SUMMARY ROW */
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg4);border-radius:7px;margin-bottom:5px;font-size:12px;}
+.sum-val{font-family:var(--fm);font-size:13px;font-weight:700;}
+
+/* RELIEF TABLE */
+.rel-item{background:var(--bg4);border:1px solid var(--border);border-radius:9px;padding:11px;margin-bottom:8px;}
+.rel-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:7px;}
+.rel-name{font-size:12px;font-weight:700;}
+.rel-area{font-size:10px;color:var(--muted);}
+.rel-nums{display:flex;gap:0;margin-bottom:7px;}
+.rel-num{flex:1;text-align:center;}
+.rel-nv{font-family:var(--fd);font-size:15px;font-weight:700;}
+.rel-nl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+
+/* ANALYTICS KPI */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.kpi-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px;}
+.kpi-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.kpi-value{font-family:var(--fd);font-size:22px;font-weight:800;line-height:1;}
+.kpi-change{font-size:10px;margin-top:3px;}
+.kpi-change.up{color:var(--green);}
+.kpi-change.dn{color:var(--red);}
+
+/* EMPTY STATE */
+.empty-s{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 18px;color:var(--muted);text-align:center;}
+.empty-s .ei{font-size:32px;margin-bottom:8px;}
+.empty-s .et{font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.empty-s .es{font-size:11px;line-height:1.5;}
+
+/* LOGOUT BTN */
+.logout-btn{width:calc(100% - 28px);margin:14px;background:rgba(232,39,26,.1);border:1px solid rgba(232,39,26,.25);border-radius:10px;padding:13px;color:var(--red);font-family:var(--fd);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+.logout-btn:active{background:rgba(232,39,26,.2);}
+
+/* LIVE INDICATOR */
+.live-ind{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--yellow);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:6px;padding:4px 8px;}
+
+/* RESPONDER STATUS */
+.resp-sb{background:var(--bg3);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;border:1px solid var(--border);}
+
+/* TOAST */
+#toast-c{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 14px);left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none;width:calc(100% - 28px);max-width:390px;}
+.toast-i{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:9px 13px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:7px;box-shadow:0 8px 28px rgba(0,0,0,.4);pointer-events:all;width:100%;}
+.toast-i.success{border-left:3px solid var(--green);}
+.toast-i.error{border-left:3px solid var(--red);}
+.toast-i.info{border-left:3px solid var(--sky);}
+.toast-i.warn{border-left:3px solid var(--orange);}
+@keyframes tIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes tOut{to{opacity:0;transform:translateY(14px);}}
+.toast-i{animation:tIn .25s ease;}
+
+/* MODALS */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;}
+.mo.open{opacity:1;pointer-events:all;}
+.ms{background:var(--bg2);border-radius:18px 18px 0 0;border:1px solid var(--border);border-bottom:none;width:100%;max-width:430px;max-height:88vh;overflow-y:auto;padding-bottom:calc(var(--sb) + 8px);transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.8,.25,1);}
+.mo.open .ms{transform:translateY(0);}
+.mpull{width:38px;height:4px;background:var(--border2);border-radius:2px;margin:10px auto 7px;}
+.mttl{font-family:var(--fd);font-size:15px;font-weight:800;padding:0 15px 12px;border-bottom:1px solid var(--border);}
+.mbody{padding:14px;}
+.mftr{display:flex;gap:7px;padding:0 15px 14px;}
+.mbtn{flex:1;padding:12px;border-radius:9px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--fd);}
+.mbtn.red{background:var(--red);color:#fff;}
+.mbtn.ghost{background:var(--bg4);border:1px solid var(--border2);color:var(--muted);}
+.mbtn.gr{background:var(--green);color:#fff;}
+.mbtn.bl{background:var(--blue);color:#fff;}
+
+/* SOS MODAL */
+.sos-cnt{font-family:var(--fd);font-size:68px;font-weight:800;color:var(--red);text-align:center;line-height:1;margin:12px 0;}
+
+/* CHART CANVAS */
+.chart-c{padding:0 12px 12px;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* NOTIF BADGE */
+.nb{background:var(--red);color:#fff;font-size:8px;font-weight:700;padding:2px 6px;border-radius:8px;font-family:var(--fm);}
+.nb.gr{background:var(--green);}
+.nb.or{background:var(--orange);}
+</style>
+</head>
+<body>
+
+<div id="app">
+<!-- STATUS BAR -->
+<div class="sb"><span class="sb-time" id="sb-clk">9:41</span><div class="sb-icons"><span>LTE</span><div class="sig"><span></span><span></span><span></span><span></span></div><div class="bat"><div class="bat-f"></div></div></div></div>
+
+<!-- SCREEN WRAP -->
+<div class="sw">
+
+<!-- ══ LOGIN ══ -->
+<div class="scr active" id="scr-login">
+  <div class="login-logo" style="justify-content:center;margin-top:14px;"><div class="ll-icon">AA</div><div class="ll-text">AgapayAlert</div></div>
+  <div class="login-tag">Cebu Disaster Response Platform</div>
+  <div class="role-sw" id="role-sw">
+    <button class="rsw-btn active" onclick="setLR('citizen',this)">Citizen</button>
+    <button class="rsw-btn" onclick="setLR('responder',this)">Responder</button>
+    <button class="rsw-btn" onclick="setLR('admin',this)">Admin</button>
+  </div>
+  <div id="lf-login" class="fl">
+    <div class="ferr" id="lerr"></div>
+    <label class="fl-lbl">Email Address</label>
+    <input id="l-email" class="fi" type="email" placeholder="you@email.com">
+    <label class="fl-lbl">Password</label>
+    <input id="l-pass" class="fi" type="password" placeholder="••••••••">
+    <button class="lbtn" onclick="doLogin()" id="lbtn-main">Sign In →</button>
+    <button class="lbtn-sec" onclick="showReg()">Create Account</button>
+  </div>
+  <div id="lf-reg" class="fl" style="display:none;">
+    <div class="ferr" id="rerr"></div>
+    <label class="fl-lbl">Full Name</label>
+    <input id="r-name" class="fi" type="text" placeholder="Juan dela Cruz">
+    <label class="fl-lbl">Email Address</label>
+    <input id="r-email" class="fi" type="email" placeholder="you@email.com">
+    <label class="fl-lbl">Password (min 6 chars)</label>
+    <input id="r-pass" class="fi" type="password" placeholder="••••••••">
+    <button class="lbtn" onclick="doReg()" id="rbtn">Create Account →</button>
+    <button class="lbtn-sec" onclick="showLogin()">← Back to Sign In</button>
+  </div>
+  <div class="demo-note"><strong>Demo:</strong><br>citizen@agapayalert.ph / citizen123<br>responder@agapayalert.ph / bfp2024<br>admin@agapayalert.ph / cdrrmo2024</div>
+</div>
+
+<!-- ══ HOME (CITIZEN DASHBOARD) ══ -->
+<div class="scr" id="scr-home">
+  <div class="ph">
+    <div class="ph-row">
+      <div><div class="pt">AgapayAlert</div><div class="ps" id="h-sub">Cebu, Philippines</div></div>
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div class="live-ind"><div class="ldot" style="background:var(--red);width:6px;height:6px;border-radius:50%;"></div>LIVE</div>
+        <button onclick="openSOS()" style="background:rgba(232,39,26,.15);border:1px solid rgba(232,39,26,.4);color:var(--red);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--fd);">🆘 SOS</button>
+      </div>
+    </div>
+  </div>
+  <div class="pb">
+    <div class="astrip"><div class="ldot" style="background:var(--red);"></div><span id="ticker-txt">⚠️ TYPHOON SIGNAL #2 — Cebu City, Mandaue, Lapu-Lapu</span></div>
+    <div class="stats2">
+      <div class="stc red"><div class="si">🚨</div><div class="sl">Active Incidents</div><div class="sv" style="color:var(--red)" id="stat-active">5</div><div class="sm" id="stat-active-meta">Require response</div></div>
+      <div class="stc or"><div class="si">🏠</div><div class="sl">Evacuees</div><div class="sv" style="color:var(--orange)" id="stat-evacuees">18,420</div><div class="sm">Across 5 centers</div></div>
+      <div class="stc gr"><div class="si">🏫</div><div class="sl">Open Centers</div><div class="sv" style="color:var(--green)" id="stat-centers">4</div><div class="sm">1 at capacity</div></div>
+      <div class="stc bl"><div class="si">🧑‍🚒</div><div class="sl">Responders</div><div class="sv" style="color:var(--sky)">12</div><div class="sm">BFP + CDRRMO</div></div>
+    </div>
+    <div class="slbl">Report an Incident</div>
+    <div class="qgrid">
+      <button class="qbtn" onclick="openReport('Flash Flood')"><div class="qi">🌊</div><div class="ql">Flood</div><div class="qs">Water rising / flooded area</div></button>
+      <button class="qbtn" onclick="openReport('Medical Emergency')"><div class="qi">🏥</div><div class="ql">Medical</div><div class="qs">Need ambulance / doctor</div></button>
+      <button class="qbtn" onclick="openReport('Fire')"><div class="qi">🔥</div><div class="ql">Fire</div><div class="qs">House / structure fire</div></button>
+      <button class="qbtn" onclick="openReport('Typhoon Damage')"><div class="qi">🌀</div><div class="ql">Typhoon</div><div class="qs">Wind damage / fallen trees</div></button>
+    </div>
+    <button class="sosbtn" onclick="openSOS()">🆘 Send Emergency SOS Now</button>
+    <div class="slbl">Latest Alerts Near You</div>
+    <div id="citizen-alerts-list">
+      <div class="ni-item"><div class="ni-t">⚠️ Typhoon Signal #2 — Cebu City</div><div class="ni-m">PAGASA · 2 hours ago · Stay indoors, prepare evacuation bag</div></div>
+      <div class="ni-item warn"><div class="ni-t">🌊 Flood Warning — Butuanon River CRITICAL</div><div class="ni-m">CDRRMO Mandaue · 45 mins ago · Residents of Tipolo must evacuate NOW</div></div>
+      <div class="ni-item info"><div class="ni-t">🏫 Evacuation Center Opened — Talisay Gym</div><div class="ni-m">LGU Talisay · 1 hr ago · 750 slots available · Poblacion, Talisay City</div></div>
+    </div>
+    <div class="slbl">My Submitted Reports <span class="nb" id="my-rep-badge" style="display:none">0</span></div>
+    <div id="my-reports-home"></div>
+    <div class="slbl">Nearest Open Centers</div>
+    <div id="nearest-centers-home"></div>
+  </div>
+</div>
+
+<!-- ══ REPORT INCIDENT ══ -->
+<div class="scr" id="scr-report">
+  <div class="ph"><div class="pt">📢 Report Incident</div><div class="ps">Submit to CDRRMO · Works offline</div></div>
+  <div class="pb">
+    <div class="offl-banner"><span>⚡</span><div><h4>Works Offline</h4><p>Saved locally, syncs when internet restores. GPS coordinates auto-embedded.</p></div></div>
+    <div class="fgrp"><label class="flbl">Incident Type</label>
+      <select id="rep-type" class="fsel">
+        <option value="Flash Flood">🌊 Flash Flood</option><option value="Typhoon Damage">🌀 Typhoon Damage</option>
+        <option value="Fire">🔥 Fire</option><option value="Medical Emergency">🏥 Medical Emergency</option>
+        <option value="Landslide">⛰️ Landslide</option><option value="Missing Person">🆘 Missing Person</option>
+        <option value="Relief Needed">📦 Relief Needed</option>
+      </select>
+    </div>
+    <div class="fgrp"><label class="flbl">Severity Level</label>
+      <select id="rep-sev" class="fsel">
+        <option value="critical">🔴 Critical — Life threatening</option><option value="high">🟠 High — Urgent</option>
+        <option value="medium">🟡 Medium — Needs attention</option><option value="low">🟢 Low — Informational</option>
+      </select>
+    </div>
+    <div class="fgrp"><label class="flbl">Barangay / Location</label><input id="rep-loc" class="finp" type="text" placeholder="e.g. Brgy. Tipolo, Mandaue City"></div>
+    <div class="fgrp"><label class="flbl">Affected Persons (est.)</label><input id="rep-persons" class="finp" type="number" placeholder="e.g. 50"></div>
+    <div class="fgrp"><label class="flbl">Description — What happened?</label><textarea id="rep-desc" class="ftxt" rows="4" placeholder="Describe the situation. Include road access, rescue needs, number of trapped persons..."></textarea></div>
+    <div class="fgrp"><label class="flbl">Assistance Needed</label>
+      <div class="chk-grid">
+        <label class="chk-item"><input type="checkbox" checked data-need="Food"> 🍚 Food</label>
+        <label class="chk-item"><input type="checkbox" checked data-need="Water"> 💧 Water</label>
+        <label class="chk-item"><input type="checkbox" data-need="Medical"> 🏥 Medical</label>
+        <label class="chk-item"><input type="checkbox" data-need="Rescue Boat"> 🛶 Boat</label>
+        <label class="chk-item"><input type="checkbox" data-need="Shelter"> 🛌 Shelter</label>
+        <label class="chk-item"><input type="checkbox" data-need="Rescue Team"> 🧑‍🚒 Rescue</label>
+      </div>
+    </div>
+    <div class="fgrp"><label class="flbl">Photo / Video Evidence</label>
+      <div class="photo-drop" onclick="document.getElementById('rep-photo').click()">📷 Tap to take photo or upload — GPS will be embedded</div>
+      <input type="file" id="rep-photo" accept="image/*,video/*" style="display:none" onchange="toast('📷 Photo attached (GPS tagged)','success')">
+    </div>
+    <button class="fbtn" onclick="submitReport()">📢 Submit Report to CDRRMO</button>
+    <div style="font-size:10px;color:var(--muted);background:var(--bg4);border-radius:8px;padding:9px 11px;margin-top:6px;border:1px solid var(--border);">💡 <strong style="color:var(--text)">Tips:</strong> Be specific with barangay + street. Add a photo. Life in danger? Use SOS button. Your report is GPS-tagged automatically.</div>
+  </div>
+</div>
+
+<!-- ══ EVACUATION CENTERS ══ -->
+<div class="scr" id="scr-evac">
+  <div class="ph"><div class="pt">🏫 Evacuation Centers</div><div class="ps">Find nearest open shelter · Cebu</div></div>
+  <div class="pb">
+    <div style="display:flex;gap:7px;margin-bottom:10px;">
+      <input id="evac-search" class="finp" style="flex:1;margin:0;" type="text" placeholder="Search by name or city..." oninput="renderEvacList()">
+      <select id="evac-city" class="fsel" style="width:130px;margin:0;" onchange="renderEvacList()">
+        <option value="all">All Cities</option><option value="Cebu City">Cebu City</option>
+        <option value="Mandaue">Mandaue</option><option value="Lapu-Lapu">Lapu-Lapu</option>
+        <option value="Talisay">Talisay</option><option value="Consolacion">Consolacion</option>
+      </select>
+    </div>
+    <button class="fbtn ghost sm" style="margin-bottom:10px;" onclick="locateNearest()">📍 Use My Location — Find Nearest</button>
+    <div class="tsw" id="evac-tsw">
+      <button class="tsw-btn active" onclick="setEvacTab('all',this)">All Centers</button>
+      <button class="tsw-btn" onclick="setEvacTab('open',this)">Open Only</button>
+      <button class="tsw-btn" onclick="setEvacTab('near',this)">Nearest First</button>
+    </div>
+    <div id="evac-list"></div>
+    <div id="add-center-wrap" style="display:none;margin-top:4px;">
+      <button class="fbtn" onclick="addEvacCenter()">➕ Add Evacuation Center</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LIVE MAP ══ -->
+<div class="scr" id="scr-map">
+  <div class="ph"><div class="pt">🗺️ Live Map</div><div class="ps">Flood zones, evac centers &amp; incidents</div></div>
+  <div class="pb">
+    <div class="tsw">
+      <button class="tsw-btn active" id="map-tab-inc" onclick="setMapTab('incidents',this)">🚨 Incidents</button>
+      <button class="tsw-btn" id="map-tab-evac" onclick="setMapTab('evac',this)">🏫 Centers</button>
+    </div>
+    <div id="map-incidents-pane">
+      <div id="map-main" class="leaflet-map"></div>
+    </div>
+    <div id="map-evac-pane" style="display:none;">
+      <div id="map-evac" class="leaflet-map"></div>
+    </div>
+    <div class="slbl">Legend</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;">
+      <span>🚨 Active Incident</span><span>🏫 Evac Center</span><span style="color:var(--red)">● Flood Zone</span><span style="color:var(--orange)">● High Risk</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESPONDER DASHBOARD ══ -->
+<div class="scr" id="scr-responder">
+  <div class="ph">
+    <div class="ph-row">
+      <div><div class="pt">My Assignments</div><div class="ps" id="resp-area-sub">BFP Unit Alpha · Mandaue City</div></div>
+      <div class="ldot" id="resp-status-dot" style="background:var(--green);width:10px;height:10px;border-radius:50%;animation:pulse 1.5s infinite;"></div>
+    </div>
+  </div>
+  <div class="pb">
+    <div class="astrip" style="background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.3);"><div class="ldot" style="background:var(--orange);"></div><strong style="color:var(--orange)">ACTIVE ASSIGNMENT:</strong>&nbsp;Flash Flood — Tipolo, Mandaue · ETA 8 mins</div>
+    <div class="stats2">
+      <div class="stc or"><div class="si">📋</div><div class="sl">My Assignments</div><div class="sv" style="color:var(--orange)" id="resp-stat-asgn">2</div><div class="sm">1 critical, 1 high</div></div>
+      <div class="stc gr"><div class="si">✅</div><div class="sl">Completed Today</div><div class="sv" style="color:var(--green)" id="resp-stat-done">3</div><div class="sm">Incidents resolved</div></div>
+      <div class="stc bl"><div class="si">📍</div><div class="sl">Area Coverage</div><div class="sv" style="color:var(--sky);font-size:16px;">Mandaue</div><div class="sm">Tipolo / Subangdaku</div></div>
+      <div class="stc red"><div class="si">⏱️</div><div class="sl">Avg Response</div><div class="sv" style="color:var(--red);font-size:18px;">14m</div><div class="sm">Below 20min target</div></div>
+    </div>
+    <div class="resp-sb">
+      <div style="display:flex;align-items:center;gap:8px;"><div id="resp-dot-big" style="width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;"></div><div><div style="font-size:12px;font-weight:700;" id="resp-status-txt">Status: Available</div><div style="font-size:10px;color:var(--muted);">Ready for dispatch</div></div></div>
+      <button onclick="toggleRespStatus()" class="fbtn ghost sm" style="width:auto;padding:6px 12px;">Change</button>
+    </div>
+    <div class="slbl">Active Assignments <span class="nb or" id="asgn-badge">0</span></div>
+    <div id="resp-assignments"></div>
+    <div class="slbl">Incoming Dispatch Orders</div>
+    <div id="resp-incoming"></div>
+    <div class="slbl">Field Report — Log Update</div>
+    <div class="card">
+      <div class="cb">
+        <div class="fgrp"><label class="flbl">Select Assignment</label><select id="resp-asgn-sel" class="fsel"></select></div>
+        <div class="fgrp"><label class="flbl">Status Update</label>
+          <select id="resp-status-upd" class="fsel">
+            <option value="en_route">🚒 En Route to location</option><option value="on_scene">📍 On Scene — assessing</option>
+            <option value="rescue_ops">⛑️ Active rescue operations</option><option value="needs_support">🆘 Requesting backup</option>
+            <option value="wrapping_up">🔄 Wrapping up operations</option><option value="resolved">✅ Incident resolved</option>
+          </select>
+        </div>
+        <div class="fgrp"><label class="flbl">Notes</label><textarea id="resp-notes" class="ftxt" rows="3" placeholder="Describe current situation, persons assisted..."></textarea></div>
+        <button class="fbtn or" onclick="submitFieldReport()">📤 Send Field Update to CDRRMO</button>
+      </div>
+    </div>
+    <div class="slbl">Messages from CDRRMO</div>
+    <div id="resp-messages">
+      <div class="ni-item info"><div class="ni-t">🚀 New Assignment — Tipolo Flood</div><div class="ni-m">CDRRMO Admin · just now · Respond immediately. Families trapped on 2nd floor.</div></div>
+      <div class="ni-item green"><div class="ni-t">📦 Relief Convoy en route to your area</div><div class="ni-m">CDRRMO Logistics · 15 mins ago · 200 food packs, 100 water jugs</div></div>
+    </div>
+    <div class="slbl">Field Map</div>
+    <div id="map-resp-field" style="height:220px;border-radius:11px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border);"></div>
+    <div class="slbl">Activity Log <button class="fbtn ghost sm" style="width:auto;display:inline-flex;margin-left:8px;" onclick="exportLog()">⬇ Export</button></div>
+    <div id="resp-log-list"></div>
+  </div>
+</div>
+
+<!-- ══ ADMIN COMMAND CENTER ══ -->
+<div class="scr" id="scr-admin">
+  <div class="ph"><div class="pt">⚡ Command Center</div><div class="ps">CDRRMO Cebu · Operations Dashboard</div></div>
+  <div class="pb">
+    <div class="stats2">
+      <div class="stc red"><div class="si">🚨</div><div class="sl">Unassigned</div><div class="sv" style="color:var(--red)" id="admin-unassigned">5</div><div class="sm">Need dispatch</div></div>
+      <div class="stc or"><div class="si">👥</div><div class="sl">Active Units</div><div class="sv" style="color:var(--orange)">12</div><div class="sm">3 available</div></div>
+      <div class="stc bl"><div class="si">📋</div><div class="sl">Reports (24h)</div><div class="sv" style="color:var(--sky)" id="admin-reports">8</div><div class="sm">Citizen submitted</div></div>
+      <div class="stc gr"><div class="si">✅</div><div class="sl">Resolved Today</div><div class="sv" style="color:var(--green)">14</div><div class="sm">94% response rate</div></div>
+    </div>
+    <div class="tsw" id="admin-tsw">
+      <button class="tsw-btn active" onclick="setAdminTab('incidents',this)">Incidents</button>
+      <button class="tsw-btn" onclick="setAdminTab('dispatch',this)">Dispatch</button>
+      <button class="tsw-btn" onclick="setAdminTab('relief',this)">Relief</button>
+      <button class="tsw-btn" onclick="setAdminTab('alerts',this)">Alerts</button>
+    </div>
+    <!-- incidents -->
+    <div id="admin-pane-incidents">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="slbl" style="padding:0;margin:0;">Pending Reports <span class="nb" id="pend-badge">0</span></div>
+        <div style="display:flex;gap:5px;">
+          <select id="inc-filter-type" class="fsel" style="padding:4px 7px;font-size:10px;width:auto;margin:0;" onchange="renderIncidents()">
+            <option value="all">All Types</option><option value="flood">Flood</option><option value="typhoon">Typhoon</option><option value="fire">Fire</option><option value="medical">Medical</option>
+          </select>
+          <select id="inc-filter-sev" class="fsel" style="padding:4px 7px;font-size:10px;width:auto;margin:0;" onchange="renderIncidents()">
+            <option value="all">All Severity</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option>
+          </select>
+        </div>
+      </div>
+      <div id="incidents-feed"></div>
+      <div class="slbl" style="margin-top:4px;">Today's Summary</div>
+      <div id="admin-summary"></div>
+    </div>
+    <!-- dispatch -->
+    <div id="admin-pane-dispatch" style="display:none;">
+      <div class="slbl">Responder Status Board</div>
+      <div id="responder-board"></div>
+      <button class="fbtn" style="margin-top:4px;" onclick="addResponderUnit()">➕ Add Responder Unit</button>
+    </div>
+    <!-- relief -->
+    <div id="admin-pane-relief" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="slbl" style="padding:0;margin:0;">Relief Distribution</div>
+        <button class="fbtn sm" style="width:auto;" onclick="logDistribution()">+ Log</button>
+      </div>
+      <div id="relief-list"></div>
+      <div class="slbl" style="margin-top:4px;">Distribution Chart</div>
+      <div class="chart-c"><canvas id="reliefChart" height="200"></canvas></div>
+    </div>
+    <!-- alerts -->
+    <div id="admin-pane-alerts" style="display:none;">
+      <div class="slbl">Compose SMS / Mass Alert</div>
+      <div class="card">
+        <div class="cb">
+          <div class="fgrp"><label class="flbl">Alert Type</label>
+            <select id="sms-type" class="fsel">
+              <option value="Emergency">🔴 Emergency Alert</option><option value="Flood Warning">🟠 Flood Warning</option>
+              <option value="Typhoon Advisory">🟡 Typhoon Advisory</option><option value="Evacuation Order">🏫 Evacuation Order</option>
+              <option value="All Clear">🟢 All Clear</option><option value="Relief Info">📦 Relief Notification</option>
+            </select>
+          </div>
+          <div class="fgrp"><label class="flbl">Target Region</label>
+            <select id="sms-region" class="fsel">
+              <option>All Region VII Subscribers</option><option>Cebu City Only</option><option>Mandaue City Only</option>
+              <option>Lapu-Lapu City Only</option><option>Flood-Zone Residents</option>
+            </select>
+          </div>
+          <div class="fgrp"><label class="flbl">Message (Bisaya / English)</label>
+            <textarea id="sms-compose" class="ftxt" rows="4" placeholder="BABALA / WARNING: ..."></textarea>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:8px;">
+            <span>Reach: <strong id="sms-reach" style="color:var(--green)">34,500</strong></span>
+            <span id="sms-count">0 chars (1 SMS)</span>
+          </div>
+          <div style="display:flex;gap:7px;">
+            <button class="fbtn" style="flex:1;" onclick="sendSMS()">📤 Broadcast Now</button>
+            <button class="fbtn ghost sm" style="width:auto;" onclick="scheduleSMS()">🗓️ Schedule</button>
+          </div>
+        </div>
+      </div>
+      <div class="slbl">Push Notification Settings</div>
+      <div class="card"><div class="cb">
+        <div class="ntgl"><div><div class="ntgl-lbl">Typhoon Alerts</div><div class="ntgl-sub">PAGASA signal warnings</div></div><div class="ntgl-btn on" id="ntgl-typhoon" onclick="toggleNotif('typhoon',this)"><div class="ntgl-dot"></div></div></div>
+        <div class="ntgl"><div><div class="ntgl-lbl">Flood Warnings</div><div class="ntgl-sub">River level alerts</div></div><div class="ntgl-btn on" id="ntgl-flood" onclick="toggleNotif('flood',this)"><div class="ntgl-dot"></div></div></div>
+        <div class="ntgl"><div><div class="ntgl-lbl">Evacuation Orders</div><div class="ntgl-sub">LGU mandatory orders</div></div><div class="ntgl-btn on" id="ntgl-evacuation" onclick="toggleNotif('evacuation',this)"><div class="ntgl-dot"></div></div></div>
+        <div class="ntgl" style="border-bottom:none;"><div><div class="ntgl-lbl">Relief Updates</div><div class="ntgl-sub">Distribution point news</div></div><div class="ntgl-btn off" id="ntgl-relief" onclick="toggleNotif('relief',this)"><div class="ntgl-dot"></div></div></div>
+      </div></div>
+      <div class="slbl">Recent SMS Log</div>
+      <div id="sms-log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ANALYTICS ══ -->
+<div class="scr" id="scr-analytics">
+  <div class="ph"><div class="pt">📈 Analytics</div><div class="ps">Disaster response metrics · Cebu</div></div>
+  <div class="pb">
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Total Incidents (7d)</div><div class="kpi-value" style="color:var(--red)">237</div><div class="kpi-change up">↑ +12% vs last week</div></div>
+      <div class="kpi-card"><div class="kpi-label">Resolution Rate</div><div class="kpi-value" style="color:var(--green)">94%</div><div class="kpi-change up">↑ +2% improved</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg Response Time</div><div class="kpi-value" style="color:var(--orange)">18<span style="font-size:14px">m</span></div><div class="kpi-change up">↓ −3min faster</div></div>
+      <div class="kpi-card"><div class="kpi-label">Persons Assisted</div><div class="kpi-value" style="color:var(--sky)">42K</div><div class="kpi-change up">↑ Relief distributed</div></div>
+    </div>
+    <div class="tsw" id="analytics-tsw">
+      <button class="tsw-btn active" onclick="setAnalyticsTab('overview',this)">Overview</button>
+      <button class="tsw-btn" onclick="setAnalyticsTab('incidents',this)">Incidents</button>
+      <button class="tsw-btn" onclick="setAnalyticsTab('relief',this)">Relief</button>
+      <button class="tsw-btn" onclick="setAnalyticsTab('responders',this)">Responders</button>
+    </div>
+    <div id="a-pane-overview">
+      <div class="card"><div class="ch"><div class="ct">Incident Trend — 7 Days</div><div style="display:flex;gap:5px;"><select id="trend-range" class="fsel" style="padding:3px 6px;font-size:10px;width:auto;" onchange="updateTrendChart()"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select><button class="fbtn ghost sm" style="width:auto;" onclick="exportChart('incident')">⬇ PNG</button></div></div><div class="chart-c"><canvas id="incidentChart" height="180"></canvas></div></div>
+      <div class="card"><div class="ch"><div class="ct">Incident Types Breakdown</div><button class="fbtn ghost sm" style="width:auto;" onclick="exportChart('type')">⬇ PNG</button></div><div class="chart-c"><canvas id="typeChart" height="180"></canvas></div></div>
+      <div class="card"><div class="ch"><div class="ct">Relief Distribution by City</div><button class="fbtn ghost sm" style="width:auto;" onclick="exportChart('reliefOv')">⬇ PNG</button></div><div class="chart-c"><canvas id="reliefOvChart" height="180"></canvas></div></div>
+      <div class="card"><div class="ch"><div class="ct">Evacuation Center Occupancy</div><button class="fbtn ghost sm" style="width:auto;" onclick="exportChart('evac')">⬇ PNG</button></div><div class="chart-c"><canvas id="evacChart" height="180"></canvas></div></div>
+    </div>
+    <div id="a-pane-incidents" style="display:none;">
+      <div class="card"><div class="ch"><div class="ct">Incidents by Day of Week</div></div><div class="chart-c"><canvas id="byDayChart" height="180"></canvas></div></div>
+      <div class="card"><div class="ch"><div class="ct">Incidents by LGU</div></div><div class="chart-c"><canvas id="byLguChart" height="180"></canvas></div></div>
+      <div class="card"><div class="ch"><div class="ct">Response Time Distribution</div></div><div class="chart-c"><canvas id="responseTimeChart" height="180"></canvas></div></div>
+    </div>
+    <div id="a-pane-relief" style="display:none;">
+      <div class="card"><div class="ch"><div class="ct">Relief Items Distributed</div></div><div class="chart-c"><canvas id="reliefItemsChart" height="180"></canvas></div></div>
+      <div class="card"><div class="ch"><div class="ct">Daily Distribution Trend</div></div><div class="chart-c"><canvas id="reliefDailyChart" height="180"></canvas></div></div>
+    </div>
+    <div id="a-pane-responders" style="display:none;">
+      <div class="card"><div class="ch"><div class="ct">Response Time by Unit</div></div><div class="chart-c"><canvas id="unitResponseChart" height="180"></canvas></div></div>
+      <div class="card"><div class="ch"><div class="ct">Incidents Handled per Unit</div></div><div class="chart-c"><canvas id="unitLoadChart" height="180"></canvas></div></div>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:6px;">
+      <button class="fbtn ghost" style="flex:1;" onclick="exportReport()">📋 Export CSV</button>
+      <button class="fbtn ghost" style="flex:1;" onclick="refreshAnalytics()">🔄 Refresh</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ OFFLINE MODE ══ -->
+<div class="scr" id="scr-offline">
+  <div class="ph"><div class="pt">📵 Offline Mode</div><div class="ps">PWA · Local storage · Sync queue</div></div>
+  <div class="pb">
+    <div id="offline-banner" class="offl-banner"><span>✅</span><div><h4>Offline Mode Active — Service Worker Running</h4><p>All data saved locally. Last sync: <strong id="last-sync">just now</strong></p></div><button class="fbtn ghost sm" style="width:auto;margin-left:auto;" onclick="checkConn()">Check</button></div>
+    <div class="slbl">Local Storage Usage</div>
+    <div class="stor-grid">
+      <div class="stor-c"><div class="stor-ic">📢</div><div class="stor-v" style="color:var(--sky)" id="stor-reports">8</div><div class="stor-l">Saved Reports</div></div>
+      <div class="stor-c"><div class="stor-ic">📦</div><div class="stor-v" style="color:var(--orange)" id="stor-relief">5</div><div class="stor-l">Relief Logs</div></div>
+      <div class="stor-c"><div class="stor-ic">📷</div><div class="stor-v" style="color:var(--purple)">3</div><div class="stor-l">Cached Photos</div></div>
+      <div class="stor-c"><div class="stor-ic">🗺️</div><div class="stor-v" style="color:var(--green)">12MB</div><div class="stor-l">Map Tiles</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px;"><span>Used: <strong id="stor-used" style="color:var(--text)">24 MB</strong></span><span>Available: <strong style="color:var(--text)">100 MB</strong></span></div>
+    <div class="stor-bar"><div class="stor-fill" id="stor-fill" style="width:24%;"></div></div>
+    <div class="slbl" style="margin-top:8px;">Quick Offline Actions</div>
+    <div class="qgrid">
+      <button class="qbtn" onclick="goToReport()"><div class="qi">📢</div><div class="ql">Report</div><div class="qs">Saved locally, syncs later</div></button>
+      <button class="qbtn" onclick="switchToEvac()"><div class="qi">🏫</div><div class="ql">Find Center</div><div class="qs">Cached center list</div></button>
+      <button class="qbtn" onclick="openSOS()"><div class="qi">🆘</div><div class="ql">Send SOS</div><div class="qs">Via SMS carrier signal</div></button>
+      <button class="qbtn" onclick="offlineLogRelief()"><div class="qi">📦</div><div class="ql">Log Relief</div><div class="qs">Offline distribution</div></button>
+    </div>
+    <div class="slbl">Sync Queue</div>
+    <div class="card">
+      <div class="ch"><div class="ct">Pending Upload</div><span class="nb or" id="sync-badge">5 Pending</span></div>
+      <div class="cb">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Items waiting to upload when internet is restored:</div>
+        <div id="sync-queue-list"></div>
+        <button id="sync-btn" class="fbtn gr" style="margin-top:8px;" onclick="syncNow()">🔄 Sync Now</button>
+      </div>
+    </div>
+    <div class="slbl">Quick Offline Report</div>
+    <div class="card"><div class="cb">
+      <div class="fgrp"><select id="offline-rep-type" class="fsel"><option>🌊 Flash Flood</option><option>🔥 Fire</option><option>🏥 Medical Emergency</option><option>🌀 Typhoon Damage</option><option>⚠️ Other</option></select></div>
+      <div class="fgrp"><input id="offline-rep-loc" class="finp" placeholder="Location (Brgy/Street, City)"></div>
+      <div class="fgrp"><textarea id="offline-rep-desc" class="ftxt" rows="3" placeholder="Brief description..."></textarea></div>
+      <button class="fbtn" onclick="submitOfflineReport()">💾 Save Report Locally</button>
+      <div style="text-align:center;font-size:10px;color:var(--muted2);margin-top:6px;">Saved to device · GPS auto-tagged · Queued for sync</div>
+    </div></div>
+    <div class="slbl">Offline Capabilities</div>
+    <div class="card"><div class="cb">
+      <div class="cap-item"><div class="cap-ic">📢</div><div><div class="cap-title" style="color:var(--green)">✅ Incident Reporting</div><div class="cap-desc">Queued locally. GPS coordinates auto-embedded. Synced when back online.</div></div></div>
+      <div class="cap-item"><div class="cap-ic">🏫</div><div><div class="cap-title" style="color:var(--green)">✅ Evacuation Centers</div><div class="cap-desc">Full center list cached. Works 100% offline with no degradation.</div></div></div>
+      <div class="cap-item"><div class="cap-ic">📍</div><div><div class="cap-title" style="color:var(--green)">✅ GPS Geotagging</div><div class="cap-desc">Device GPS works without internet. All coordinates logged locally.</div></div></div>
+      <div class="cap-item"><div class="cap-ic">📦</div><div><div class="cap-title" style="color:var(--green)">✅ Relief Logs</div><div class="cap-desc">Log distributions offline. Batch-synced when reconnected.</div></div></div>
+      <div class="cap-item"><div class="cap-ic">📱</div><div><div class="cap-title" style="color:var(--yellow)">⚠️ SMS / Push Alerts</div><div class="cap-desc">SMS works via mobile carrier. Push notifications require connection.</div></div></div>
+      <div class="cap-item"><div class="cap-ic">🗺️</div><div><div class="cap-title" style="color:var(--yellow)">⚠️ Live Map</div><div class="cap-desc">Cached tiles available offline. Live overlay needs connection.</div></div></div>
+    </div></div>
+    <div class="slbl">PWA Installation</div>
+    <div class="card"><div class="cb">
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px;">Install AgapayAlert as a native app for full offline access, home screen shortcut, and background sync.</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:12px;margin-bottom:10px;">
+        <div style="padding:8px 10px;background:var(--bg4);border-radius:7px;border:1px solid var(--border);"><strong>Android:</strong> <span style="color:var(--muted)">Tap ⋮ → "Add to Home Screen"</span></div>
+        <div style="padding:8px 10px;background:var(--bg4);border-radius:7px;border:1px solid var(--border);"><strong>iOS:</strong> <span style="color:var(--muted)">Tap Share □↑ → "Add to Home Screen"</span></div>
+        <div style="padding:8px 10px;background:var(--bg4);border-radius:7px;border:1px solid var(--border);"><strong>Desktop:</strong> <span style="color:var(--muted)">Click ⊕ in address bar → Install</span></div>
+      </div>
+      <button class="fbtn bl" onclick="toast('📲 Follow your browser install instructions above!','info')">📲 Install AgapayAlert</button>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══ GEOTAGGING ══ -->
+<div class="scr" id="scr-geo">
+  <div class="ph"><div class="pt">📍 Geotagging</div><div class="ps">GPS-tagged incidents, responders &amp; relief</div></div>
+  <div class="pb">
+    <div style="display:flex;gap:7px;margin-bottom:10px;">
+      <button class="fbtn ghost sm" style="flex:1;" onclick="copyCoords('10.3522°N, 123.9310°E')">📋 Copy Current GPS</button>
+      <button class="fbtn sm" style="flex:1;" onclick="toast('📍 GPS location refreshed: 10.3157°N, 123.8854°E','success')">📍 Refresh Location</button>
+    </div>
+    <div style="background:rgba(232,39,26,.08);border:1px solid rgba(232,39,26,.2);border-radius:8px;padding:11px;margin-bottom:12px;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">LOCATION DETECTED</div>
+      <div style="font-family:var(--fm);font-size:12px;color:var(--red);">10.3157°N, 123.8854°E</div>
+      <div style="font-size:11px;margin-top:2px;">Cebu City, Region VII, Philippines</div>
+    </div>
+    <div class="slbl">GPS-Tagged Items</div>
+    <div id="geo-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFILE / SETTINGS ══ -->
+<div class="scr" id="scr-profile">
+  <div class="prof-h">
+    <div class="prof-av" id="prof-av">MR</div>
+    <div class="prof-nm" id="prof-nm">Maria Santos</div>
+    <div class="prof-rb" id="prof-rb">Citizen</div>
+  </div>
+  <div class="pmi" onclick="toast('🔔 Notification settings','info')"><span class="pmi-ic">🔔</span><div style="flex:1;"><div class="pmi-lbl">Notifications</div><div style="font-size:10px;color:var(--muted);">Alert preferences</div></div><span class="pmi-arrow">›</span></div>
+  <div class="pmi" onclick="toast('📍 Location services','info')"><span class="pmi-ic">📍</span><div style="flex:1;"><div class="pmi-lbl">Location Services</div><div style="font-size:10px;color:var(--muted);">GPS + auto-detect</div></div><span class="pmi-arrow">›</span></div>
+  <div class="pmi" onclick="gotoMyReports()"><span class="pmi-ic">📋</span><div style="flex:1;"><div class="pmi-lbl">My Reports</div><div style="font-size:10px;color:var(--muted);">View submitted incidents</div></div><span class="nb" id="prof-rep-badge" style="display:none;">0</span><span class="pmi-arrow">›</span></div>
+  <div class="pmi" id="pmi-offline" onclick="switchToOffline()"><span class="pmi-ic">📵</span><div style="flex:1;"><div class="pmi-lbl">Offline Mode</div><div style="font-size:10px;color:var(--muted);">PWA · Sync queue</div></div><span class="pmi-arrow">›</span></div>
+  <div class="pmi" id="pmi-geo" onclick="switchToGeo()"><span class="pmi-ic">📍</span><div style="flex:1;"><div class="pmi-lbl">Geotagging</div><div style="font-size:10px;color:var(--muted);">GPS-tagged items</div></div><span class="pmi-arrow">›</span></div>
+  <div class="pmi" id="pmi-analytics" onclick="switchToAnalytics()" style="display:none;"><span class="pmi-ic">📈</span><div style="flex:1;"><div class="pmi-lbl">Analytics</div><div style="font-size:10px;color:var(--muted);">Response metrics</div></div><span class="pmi-arrow">›</span></div>
+  <div style="padding:12px 14px;"><div class="slbl" style="padding:0;margin:0;">App Settings</div></div>
+  <div style="padding:0 14px;">
+    <div class="sw-row"><div><div class="sw-lbl">Offline Mode</div><div class="sw-sub">Save reports when no internet</div></div><label class="tgl"><input type="checkbox" checked onchange="toast('⚡ Offline mode: '+(this.checked?'enabled':'disabled'),'info')"><span class="sldr"></span></label></div>
+    <div class="sw-row"><div><div class="sw-lbl">Emergency Alerts</div><div class="sw-sub">Receive CDRRMO broadcasts</div></div><label class="tgl"><input type="checkbox" checked onchange="toast('🔔 Alerts: '+(this.checked?'on':'off'),'info')"><span class="sldr"></span></label></div>
+    <div class="sw-row"><div><div class="sw-lbl">GPS Geotagging</div><div class="sw-sub">Auto-attach location to reports</div></div><label class="tgl"><input type="checkbox" checked onchange="toast('📍 GPS: '+(this.checked?'on':'off'),'info')"><span class="sldr"></span></label></div>
+    <div class="sw-row" style="border-bottom:none;"><div><div class="sw-lbl">Dark Mode</div><div class="sw-sub">Force dark theme</div></div><label class="tgl"><input type="checkbox" checked onchange="toast('🌙 Dark mode: '+(this.checked?'on':'off'),'info')"><span class="sldr"></span></label></div>
+  </div>
+  <div style="padding:12px 14px;"><div class="pmi" style="background:var(--bg4);border-radius:9px;border:1px solid var(--border);padding:12px;" onclick="toast('ℹ️ AgapayAlert v2.4.1 · CDRRMO Cebu','info')"><span class="pmi-ic">ℹ️</span><div style="flex:1;"><div class="pmi-lbl">About AgapayAlert</div><div style="font-size:10px;color:var(--muted);">Version 2.4.1 · CDRRMO Cebu</div></div><span class="pmi-arrow">›</span></div></div>
+  <button class="logout-btn" onclick="doLogout()">⏻ Sign Out</button>
+</div>
+
+</div><!-- /sw -->
+
+<!-- BOTTOM NAV -->
+<nav class="bnav" id="bottom-nav" style="display:none;">
+  <button class="ntab active" id="ntab-home" onclick="goTab('home')"><span class="ni">🏠</span>Home</button>
+  <button class="ntab" id="ntab-report" onclick="goTab('report')"><span class="ni">📢</span>Report</button>
+  <button class="ntab" id="ntab-evac" onclick="goTab('evac')"><span class="ni">🏫</span>Centers</button>
+  <button class="ntab" id="ntab-map" onclick="goTab('map')"><span class="ni">🗺️</span>Map</button>
+  <button class="ntab" id="ntab-role" onclick="goTab('role')"><span class="ni" id="role-ni">🧑‍🚒</span><span id="role-nl">More</span></button>
+  <button class="ntab" id="ntab-profile" onclick="goTab('profile')"><span class="ni">👤</span>Profile</button>
+</nav>
+</div><!-- /app -->
+
+<!-- SOS MODAL -->
+<div class="mo" id="sos-mo" onclick="if(event.target===this)cancelSOS()">
+  <div class="ms">
+    <div class="mpull"></div>
+    <div class="mttl">🆘 Emergency SOS</div>
+    <div class="mbody" style="text-align:center;">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">Sending your GPS location to CDRRMO in:</div>
+      <div class="sos-cnt" id="sos-cnt">5</div>
+      <div style="background:rgba(232,39,26,.08);border:1px solid rgba(232,39,26,.2);border-radius:9px;padding:11px;font-size:11px;text-align:left;margin-bottom:14px;">
+        <div style="color:var(--muted);font-size:10px;margin-bottom:4px;">LOCATION DETECTED</div>
+        <div style="font-family:var(--fm);font-size:12px;color:var(--red);">10.3157°N, 123.8854°E</div>
+        <div style="font-size:11px;margin-top:2px;">Cebu City, Region VII, Philippines</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px;">
+          <div style="background:var(--bg4);border-radius:7px;padding:8px;"><div style="font-size:9px;color:var(--muted);">Alerting</div><div style="font-size:11px;font-weight:700;margin-top:2px;">NDRRMC+BFP+CDRRMO</div></div>
+          <div style="background:var(--bg4);border-radius:7px;padding:8px;"><div style="font-size:9px;color:var(--muted);">Est. Arrival</div><div style="font-size:11px;font-weight:700;color:var(--green);margin-top:2px;">~8 minutes</div></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Your location and user info will be shared with emergency responders immediately.</div>
+    </div>
+    <div class="mftr" style="flex-direction:column;gap:7px;">
+      <button id="sos-confirm-btn" class="mbtn red" onclick="confirmSOS()" style="padding:14px;font-size:15px;">🆘 CONFIRM SOS</button>
+      <button class="mbtn ghost" onclick="cancelSOS()">Cancel — False Alarm</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERIC MODAL -->
+<div class="mo" id="gen-mo" onclick="if(event.target===this)closeModal()">
+  <div class="ms">
+    <div class="mpull"></div>
+    <div class="mttl" id="gen-mo-title">Modal</div>
+    <div class="mbody" id="gen-mo-body"></div>
+    <div class="mftr" id="gen-mo-footer"><button class="mbtn ghost" onclick="closeModal()">Close</button></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-c"></div>
+<script>
+// ══════════════════════════════════════════════
+// AgapayAlert Mobile — Full Feature JS
+// ══════════════════════════════════════════════
+
+// ── CLOCK ──
+function updateClock(){const n=new Date();const t=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');const el=document.getElementById('sb-clk');if(el)el.textContent=t;}
+updateClock();setInterval(updateClock,30000);
+
+// ── DATA ──
+let incidentIdCounter=1000,responderLogIdCounter=0;
+let incidents=[
+  {id:++incidentIdCounter,icon:'🌊',type:'flood',  title:'Flash Flood — Butuanon River Rising',   loc:'Tipolo, Mandaue City',    time:Date.now()-2*60000,  sev:'critical',status:'active',   responder:'',needs:['Rescue Boat','Food','Water'],desc:'Water level rising fast. 3 families on 2nd floor unable to evacuate.',reportedBy:'Maria Reyes'},
+  {id:++incidentIdCounter,icon:'🌀',type:'typhoon', title:'Roof Blown Off — 3 Families Displaced',  loc:'Cebu City, Region VII',   time:Date.now()-11*60000, sev:'high',   status:'responded',responder:'BFP Unit Alpha',needs:['Shelter','Food'],desc:'Roof partially collapsed. Families need temporary shelter.',reportedBy:'Juan Santos'},
+  {id:++incidentIdCounter,icon:'🏥',type:'medical', title:'Elderly Patient — No Clinic Access',     loc:'Lapu-Lapu City',          time:Date.now()-23*60000, sev:'medium', status:'active',   responder:'',needs:['Medical'],desc:'70-year-old needs medication. Road flooded.',reportedBy:'Rosa Cruz'},
+  {id:++incidentIdCounter,icon:'🔥',type:'fire',    title:'House Fire — 2 Units Burned',            loc:'Labangon, Cebu City',     time:Date.now()-34*60000, sev:'high',   status:'resolved', responder:'BFP Unit Bravo',needs:['Shelter','Food'],desc:'Fire from gas leak. 2 units burned. 8 displaced.',reportedBy:'Pedro Lim'},
+  {id:++incidentIdCounter,icon:'🌊',type:'flood',   title:'Road Impassable — Waist Deep Water',     loc:'Subangdaku, Mandaue',     time:Date.now()-41*60000, sev:'critical',status:'active',   responder:'',needs:['Rescue Boat'],desc:'Main road completely flooded.',reportedBy:'Ana Bautista'},
+  {id:++incidentIdCounter,icon:'🏚️',type:'typhoon', title:'Tree Fallen on Road — Access Blocked',   loc:'Osmeña Blvd, Cebu City',  time:Date.now()-55*60000, sev:'medium', status:'resolved', responder:'CDRRMO Team 2',needs:['Rescue Team'],desc:'Large acacia tree fell across the road.',reportedBy:'Carlo Ramos'},
+  {id:++incidentIdCounter,icon:'🌊',type:'flood',   title:'Flood in Ground Floor — Rescue Needed',  loc:'Pusok, Lapu-Lapu City',   time:Date.now()-65*60000, sev:'critical',status:'active',   responder:'',needs:['Rescue Boat','Food','Water'],desc:'Ground floor submerged. Residents on roof.',reportedBy:'Liza Fernandez'},
+  {id:++incidentIdCounter,icon:'🏥',type:'medical', title:'Pregnant Woman — Emergency Transport',   loc:'Inayawan, Cebu City',     time:Date.now()-72*60000, sev:'critical',status:'responded',responder:'CCMC Ambulance 3',needs:['Medical'],desc:'Pregnant woman in labor. Hospital road flooded.',reportedBy:'Ben Villanueva'},
+];
+let myReports=[];
+let responders=[
+  {id:'r1',name:'BFP Unit Alpha',  type:'BFP',    area:'Mandaue City', status:'available',assignments:[]},
+  {id:'r2',name:'BFP Unit Bravo',  type:'BFP',    area:'Cebu City',    status:'deployed', assignments:[1002]},
+  {id:'r3',name:'CDRRMO Team 1',   type:'CDRRMO', area:'Lapu-Lapu',    status:'available',assignments:[]},
+  {id:'r4',name:'CDRRMO Team 2',   type:'CDRRMO', area:'Cebu City',    status:'standby',  assignments:[]},
+  {id:'r5',name:'CCMC Ambulance 3',type:'Medical',area:'Cebu City',    status:'deployed', assignments:[1008]},
+  {id:'r6',name:'Rescue Boat 7',   type:'Rescue', area:'Mandaue',      status:'available',assignments:[]},
+];
+let evacCenters=[
+  {id:1,name:'Cebu City Sports Center',addr:'Osmena Blvd, Cebu City',      cap:2500,occ:2300,status:'near'},
+  {id:2,name:'Mandaue City Gym',        addr:'A.S. Fortuna St, Mandaue',   cap:3000,occ:1800,status:'open'},
+  {id:3,name:'Lapu-Lapu City Hall',     addr:'Lapu-Lapu City',             cap:900, occ:900, status:'full'},
+  {id:4,name:'Talisay Gymnasium',       addr:'Poblacion, Talisay City',    cap:1500,occ:750, status:'open'},
+  {id:5,name:'Consolacion Mun. Hall',   addr:'Poblacion, Consolacion',     cap:1000,occ:380, status:'open'},
+];
+let reliefLogs=[
+  {id:101,item:'🍚 Food Packs',   area:'Mandaue City',  allocated:4000,distributed:3200,status:'in-progress'},
+  {id:102,item:'💧 Bottled Water',area:'Lapu-Lapu City',allocated:2500,distributed:1800,status:'in-progress'},
+  {id:103,item:'🏥 Medical Kits', area:'Cebu City',     allocated:600, distributed:420, status:'in-progress'},
+  {id:104,item:'🛏️ Sleeping Kits',area:'Talisay City',  allocated:1200,distributed:900, status:'in-progress'},
+  {id:105,item:'👗 Clothing',     area:'Consolacion',   allocated:800, distributed:800, status:'complete'},
+];
+let smsLog=[
+  {type:'alert',  label:'NDRRMC ALERT',  time:'08:42 AM',body:'BABALA: Typhoon Carina Signal #2 sa Cebu City, Mandaue, Lapu-Lapu. Mag-evacuate na.',recipients:'186,000 · Region VII'},
+  {type:'warning',label:'FLOOD WARNING', time:'09:15 AM',body:'Butuanon River CRITICAL. Tipolo, Subangdaku EVACUATE NOW. Nearest: Mandaue City Gym.',recipients:'28,000 · Mandaue City'},
+  {type:'info',   label:'RELIEF INFO',   time:'10:30 AM',body:'Relief distribution sa Talisay Gymnasium. Magdala og valid ID.',recipients:'10,800 · Talisay City'},
+];
+let syncQueue=[
+  {id:1,label:'Flood report — Brgy. Tipolo, Mandaue',time:'2 min ago'},
+  {id:2,label:'Relief log — 50 food packs, Evac A',time:'5 min ago'},
+  {id:3,label:'GPS track — Responder Unit 4',time:'8 min ago'},
+  {id:4,label:'Photo evidence — 3 images geotagged',time:'12 min ago'},
+  {id:5,label:'Evac center headcount — 142 persons',time:'20 min ago'},
+];
+let respLog=[
+  {id:++responderLogIdCounter,time:'09:02 AM',action:'Dispatched to Tipolo Flood — Butuanon River',status:'en_route'},
+  {id:++responderLogIdCounter,time:'09:10 AM',action:'On scene at Tipolo. 3 families located on 2nd floor.',status:'on_scene'},
+  {id:++responderLogIdCounter,time:'08:30 AM',action:'Resolved: Tree removal — Osmeña Blvd',status:'resolved'},
+  {id:++responderLogIdCounter,time:'07:45 AM',action:'Completed medical relay — Inayawan to CCMC',status:'resolved'},
+];
+const geoData=[
+  {icon:'🌊',name:'Flash Flood Report',    type:'Flood Incident',   coords:'10.3567°N, 123.9317°E',lgu:'Mandaue City'},
+  {icon:'🚒',name:'BFP Unit Alpha',        type:'Responder Track',  coords:'10.3522°N, 123.9310°E',lgu:'Mandaue City'},
+  {icon:'📦',name:'Relief Convoy Alpha',   type:'Relief Delivery',  coords:'10.3157°N, 123.8854°E',lgu:'Cebu City'},
+  {icon:'🏚️',name:'Roof Damage Report',   type:'Typhoon Damage',   coords:'10.3150°N, 123.8860°E',lgu:'Cebu City'},
+  {icon:'🛶',name:'Rescue Boat Unit 7',    type:'Rescue Operation', coords:'10.3490°N, 123.9280°E',lgu:'Mandaue'},
+];
+const DEMO_USERS={
+  'citizen@agapayalert.ph':   {pass:'citizen123', role:'citizen',   name:'Maria Santos',     avatar:'MS'},
+  'responder@agapayalert.ph': {pass:'bfp2024',    role:'responder', name:'Sgt. Reyes',       avatar:'SR'},
+  'admin@agapayalert.ph':     {pass:'cdrrmo2024', role:'admin',     name:'Capt. Dela Cruz',  avatar:'DC'},
+};
+
+let currentUser=null,currentRole='citizen',loginRole='citizen';
+let mainMap=null,evacMap=null,respMap=null;
+let chartsInit={},chartInstances={};
+let sosTimer=null;
+let evacuationsTabFilter='all';
+const C=[10.33,123.90];
+
+// ── HELPERS ──
+function timeAgo(ts){const d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return 'just now';if(m<60)return m+'min ago';const h=Math.floor(m/60);if(h<24)return h+'hr ago';return Math.floor(h/24)+'d ago';}
+function sevClass(s){return s==='critical'?'crit':s==='high'?'high':s==='medium'?'med':'low';}
+function statusColor(s){return s==='resolved'?'var(--green)':s==='responded'?'var(--sky)':'var(--orange)';}
+
+// ── TOAST ──
+function toast(msg,type='success',dur=3500){
+  const icons={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️',warning:'⚠️'};
+  const c=document.getElementById('toast-c');
+  const t=document.createElement('div');t.className='toast-i '+(type==='warning'?'warn':type);
+  t.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span style="flex:1;">${msg}</span><span style="cursor:pointer;color:var(--muted2);" onclick="this.parentElement.remove()">✕</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.animation='tOut .25s ease forwards';setTimeout(()=>t.remove(),250);},dur);
+}
+
+// ── LOGIN ──
+let loginRoleChoice='citizen';
+function setLR(r,btn){loginRoleChoice=r;document.querySelectorAll('.rsw-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function showReg(){document.getElementById('lf-login').style.display='none';document.getElementById('lf-reg').style.display='';}
+function showLogin(){document.getElementById('lf-reg').style.display='none';document.getElementById('lf-login').style.display='';}
+function doLogin(){
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
+  const pass=document.getElementById('l-pass').value;
+  const err=document.getElementById('lerr');
+  err.classList.remove('show');
+  if(!email||!pass){err.textContent='Please enter email and password.';err.classList.add('show');return;}
+  const btn=document.getElementById('lbtn-main');
+  btn.innerHTML='<span class="spn"></span> Signing in...';btn.disabled=true;
+  setTimeout(()=>{
+    btn.innerHTML='Sign In →';btn.disabled=false;
+    const u=DEMO_USERS[email];
+    if(!u||u.pass!==pass){err.textContent='Invalid email or password.';err.classList.add('show');return;}
+    enterApp(u);
+  },850);
+}
+function doReg(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  const err=document.getElementById('rerr');err.classList.remove('show');
+  if(!name||!email||!pass){err.textContent='All fields required.';err.classList.add('show');return;}
+  if(pass.length<6){err.textContent='Password min 6 characters.';err.classList.add('show');return;}
+  const btn=document.getElementById('rbtn');btn.innerHTML='<span class="spn"></span>';btn.disabled=true;
+  setTimeout(()=>{
+    btn.innerHTML='Create Account →';btn.disabled=false;
+    const initials=name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    enterApp({role:loginRoleChoice,name,avatar:initials});
+  },850);
+}
+function enterApp(u){
+  currentUser=u;currentRole=u.role;
+  document.getElementById('prof-av').textContent=u.avatar||'?';
+  document.getElementById('prof-nm').textContent=u.name;
+  document.getElementById('prof-rb').textContent=u.role.charAt(0).toUpperCase()+u.role.slice(1);
+  setupNavForRole();
+  document.getElementById('bottom-nav').style.display='flex';
+  document.getElementById('scr-login').classList.remove('active');
+  goTab('home');
+  renderAll();
+  toast('👋 Welcome, '+(u.name.split(' ')[0])+'!','success');
+  startTicker();
+  startEvacueesPulse();
+}
+function setupNavForRole(){
+  const ni=document.getElementById('role-ni'),nl=document.getElementById('role-nl');
+  const pmiAnalytics=document.getElementById('pmi-analytics');
+  if(currentRole==='admin'){ni.textContent='🛡️';nl.textContent='Admin';if(pmiAnalytics)pmiAnalytics.style.display='flex';}
+  else if(currentRole==='responder'){ni.textContent='🧑‍🚒';nl.textContent='Respond';if(pmiAnalytics)pmiAnalytics.style.display='none';}
+  else{ni.textContent='🌀';nl.textContent='Alerts';if(pmiAnalytics)pmiAnalytics.style.display='none';}
+  // show add center btn for admin
+  const acw=document.getElementById('add-center-wrap');if(acw)acw.style.display=currentRole==='admin'?'':'none';
+}
+function doLogout(){
+  currentUser=null;
+  document.getElementById('bottom-nav').style.display='none';
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active'));
+  document.getElementById('scr-login').classList.add('active');
+  document.getElementById('l-email').value='';document.getElementById('l-pass').value='';
+  document.getElementById('lerr').classList.remove('show');
+  showLogin();toast('You have been signed out.','info',2500);
+}
+
+// ── TAB NAVIGATION ──
+function goTab(tab){
+  let scrId='scr-home',tabId='ntab-home';
+  if(tab==='home'){scrId='scr-home';tabId='ntab-home';}
+  else if(tab==='report'){scrId='scr-report';tabId='ntab-report';}
+  else if(tab==='evac'){scrId='scr-evac';tabId='ntab-evac';renderEvacList();}
+  else if(tab==='map'){scrId='scr-map';tabId='ntab-map';setTimeout(initMaps,150);}
+  else if(tab==='role'){
+    if(currentRole==='admin'){scrId='scr-admin';tabId='ntab-role';}
+    else if(currentRole==='responder'){scrId='scr-responder';tabId='ntab-role';renderRespDashboard();setTimeout(()=>initRespMap(),150);}
+    else{scrId='scr-offline';tabId='ntab-role';}
+  }
+  else if(tab==='profile'){scrId='scr-profile';tabId='ntab-profile';}
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active'));
+  document.getElementById(scrId).classList.add('active');
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  const s=document.getElementById(scrId);if(s)s.scrollTop=0;
+}
+function switchToEvac(){goTab('evac');}
+function switchToOffline(){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active'));document.getElementById('scr-offline').classList.add('active');updateStorageStats();renderSyncQueue();}
+function switchToGeo(){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active'));document.getElementById('scr-geo').classList.add('active');renderGeoList();}
+function switchToAnalytics(){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active'));document.getElementById('scr-analytics').classList.add('active');setTimeout(initCharts,150);}
+function goToReport(){goTab('report');}
+function gotoMyReports(){goTab('report');}
+
+// ── RENDER ALL ──
+function renderAll(){
+  renderHome();updateDashboardStats();
+  if(currentRole==='admin'){renderIncidents();renderResponderBoard();renderReliefList();renderSMSLog();}
+  if(currentRole==='responder'){renderRespDashboard();}
+  renderEvacList();renderGeoList();updateStorageStats();renderSyncQueue();
+}
+
+// ── TICKER ──
+const tickerMsgs=['⚠️ TYPHOON SIGNAL #2 — Cebu City, Mandaue, Lapu-Lapu','🌊 Butuanon River: CRITICAL — Tipolo & Subangdaku evacuate NOW','🏫 Talisay Gymnasium: 750 slots available · Open now','📦 Relief convoy en route to Mandaue City Gym','🚒 12 responder units active across Cebu Province'];
+let tickerIdx=0,tickerInterval=null;
+function startTicker(){
+  if(tickerInterval)return;
+  tickerInterval=setInterval(()=>{
+    tickerIdx=(tickerIdx+1)%tickerMsgs.length;
+    const el=document.getElementById('ticker-txt');
+    if(el){el.style.opacity='0';setTimeout(()=>{el.textContent=tickerMsgs[tickerIdx];el.style.opacity='1';},300);}
+  },5000);
+}
+function startEvacueesPulse(){
+  setInterval(()=>{const el=document.getElementById('stat-evacuees');if(el){const cur=parseInt(el.textContent.replace(/,/g,''))||18420;el.textContent=(cur+Math.floor(Math.random()*18)-4).toLocaleString();}},9000);
+}
+
+// ── HOME ──
+function renderHome(){
+  renderMyReportsBadge();
+  renderNearestCenters();
+  renderMyReportsHome();
+}
+function renderMyReportsBadge(){
+  const b=document.getElementById('my-rep-badge');const b2=document.getElementById('prof-rep-badge');
+  if(b){b.textContent=myReports.length;b.style.display=myReports.length?'':'none';}
+  if(b2){b2.textContent=myReports.length;b2.style.display=myReports.length?'':'none';}
+}
+function renderNearestCenters(){
+  const el=document.getElementById('nearest-centers-home');if(!el)return;
+  const open=evacCenters.filter(c=>c.status!=='full').slice(0,3);
+  if(!open.length){el.innerHTML='<div class="empty-s"><div class="ei">🏫</div><div class="es">No open centers found.</div></div>';return;}
+  el.innerHTML=open.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:9px;padding:10px;background:var(--bg4);border-radius:9px;border:1px solid var(--border);margin-bottom:7px;">
+      <div style="font-size:20px;">🏫</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;">${c.name}</div>
+        <div style="font-size:10px;color:var(--muted);">${c.addr}</div>
+        <div style="font-size:10px;color:var(--green);margin-top:2px;">${(c.cap-c.occ).toLocaleString()} slots available</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+        <span class="bx open">OPEN</span>
+        <span style="font-family:var(--fm);font-size:10px;color:var(--muted);">${(1.2+i*1.4).toFixed(1)}km</span>
+      </div>
+    </div>`).join('');
+}
+function renderMyReportsHome(){
+  const el=document.getElementById('my-reports-home');if(!el)return;
+  if(!myReports.length){el.innerHTML='<div class="empty-s" style="padding:16px;"><div class="ei">📋</div><div class="es">No reports submitted yet.</div></div>';return;}
+  el.innerHTML=myReports.slice(0,5).map(r=>`
+    <div class="inc-row">
+      <div class="inc-ic ${r.type||'other'}">${r.icon||'📢'}</div>
+      <div class="inc-meta">
+        <div class="inc-ttl">${r.title}</div>
+        <div class="inc-loc">📍 ${r.loc}</div>
+        <div class="inc-tm">${timeAgo(r.time)} · <span style="color:${statusColor(r.status)}">${r.status==='active'?'⏳ Awaiting Response':r.status==='responded'?'🚒 Dispatched':'✅ Resolved'}</span></div>
+      </div>
+      <span class="bx ${sevClass(r.sev)}">${r.sev}</span>
+    </div>`).join('');
+}
+
+// ── STATS UPDATE ──
+function updateDashboardStats(){
+  const active=incidents.filter(i=>i.status==='active').length;
+  ['stat-active','admin-unassigned'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=active;});
+  const el2=document.getElementById('admin-reports');if(el2)el2.textContent=incidents.length;
+  const pb=document.getElementById('pend-badge');if(pb)pb.textContent=active;
+  renderAdminSummary();
+}
+
+// ── REPORT ──
+function openReport(type){
+  goTab('report');
+  setTimeout(()=>{const s=document.getElementById('rep-type');if(s)for(let i=0;i<s.options.length;i++){if(s.options[i].value===type){s.selectedIndex=i;break;}}},60);
+}
+function submitReport(){
+  const type=document.getElementById('rep-type').value;
+  const sev=document.getElementById('rep-sev').value;
+  const loc=document.getElementById('rep-loc').value.trim();
+  const desc=document.getElementById('rep-desc').value.trim();
+  if(!loc){toast('Please enter a location.','error');return;}
+  if(!desc){toast('Please add a description.','error');return;}
+  const needs=[...document.querySelectorAll('#scr-report .chk-item input:checked')].map(c=>c.dataset.need);
+  const typeIcons={'Flash Flood':'🌊','Typhoon Damage':'🌀','Fire':'🔥','Medical Emergency':'🏥','Landslide':'⛰️','Missing Person':'🆘','Relief Needed':'📦'};
+  const typeMap={'Flash Flood':'flood','Typhoon Damage':'typhoon','Fire':'fire','Medical Emergency':'medical'};
+  const rep={id:++incidentIdCounter,icon:typeIcons[type]||'📢',type:typeMap[type]||'other',title:type+' — '+loc,loc,sev,status:'active',time:Date.now(),responder:'',needs,desc,reportedBy:currentUser?.name||'Citizen'};
+  incidents.unshift(rep);myReports.unshift(rep);
+  syncQueue.unshift({id:Date.now(),label:type+' — '+loc,time:'just now'});
+  document.getElementById('rep-loc').value='';document.getElementById('rep-desc').value='';document.getElementById('rep-persons').value='';
+  updateDashboardStats();renderHome();
+  toast('📢 Report submitted to CDRRMO!','success');
+  goTab('home');
+}
+
+// ── EVAC ──
+function setEvacTab(t,btn){evacuationsTabFilter=t;document.querySelectorAll('#evac-tsw .tsw-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderEvacList();}
+function renderEvacList(){
+  const el=document.getElementById('evac-list');if(!el)return;
+  const q=(document.getElementById('evac-search')?.value||'').toLowerCase();
+  const city=document.getElementById('evac-city')?.value||'all';
+  let list=evacCenters.filter(c=>{
+    const ms=!q||c.name.toLowerCase().includes(q)||c.addr.toLowerCase().includes(q);
+    const mf=city==='all'||c.addr.toLowerCase().includes(city.toLowerCase());
+    return ms&&mf;
+  });
+  if(evacuationsTabFilter==='open')list=list.filter(c=>c.status!=='full');
+  if(!list.length){el.innerHTML='<div class="empty-s"><div class="ei">🔍</div><div class="es">No centers match your search.</div></div>';return;}
+  el.innerHTML=list.map((c,i)=>{
+    const pct=Math.round(c.occ/c.cap*100);
+    const avail=c.cap-c.occ;
+    const bc=pct>=95?'var(--red)':pct>=70?'var(--yellow)':'var(--green)';
+    const statusBadge=c.status==='full'?'<span class="bx full">🔴 FULL</span>':c.status==='near'?'<span class="bx near">⚠️ NEAR FULL</span>':'<span class="bx open">✅ OPEN</span>';
+    return `<div class="evac-c">
+      <div class="evac-h"><div><div class="evac-n">${c.name}</div><div class="evac-a">📍 ${c.addr} · ${(1.2+i*1.3).toFixed(1)}km</div></div>${statusBadge}</div>
+      <div class="evac-pbar"><div class="evac-pfill" style="width:${pct}%;background:${bc};"></div></div>
+      <div class="evac-stats">
+        <div class="evac-st"><div class="evac-sv" style="color:${bc}">${c.occ.toLocaleString()}</div><div class="evac-sl">Evacuees</div></div>
+        <div class="evac-st"><div class="evac-sv">${c.cap.toLocaleString()}</div><div class="evac-sl">Capacity</div></div>
+        <div class="evac-st"><div class="evac-sv" style="color:${avail===0?'var(--red)':avail<200?'var(--yellow)':'var(--sky)'}">${avail.toLocaleString()}</div><div class="evac-sl">Available</div></div>
+        <div class="evac-st"><div class="evac-sv" style="color:var(--muted)">${pct}%</div><div class="evac-sl">Occupied</div></div>
+      </div>
+      <div class="evac-btns">
+        ${c.status!=='full'?`<button class="ebtn pr" onclick="navigateTo('${c.name}','${c.addr}')">🗺️ Directions</button>`:''}
+        <button class="ebtn sc" onclick="viewCenter(${c.id})">👁️ Details</button>
+        ${currentRole==='admin'?`<button class="ebtn sc" onclick="editEvacCenter(${c.id})" style="font-size:10px;">✏️ Edit</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function locateNearest(){
+  const open=evacCenters.filter(c=>c.status!=='full');
+  if(open.length){toast(`📍 Nearest: ${open[0].name} — 1.2km · ${(open[0].cap-open[0].occ).toLocaleString()} slots`,'info',5000);}
+}
+function navigateTo(name,addr){window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name+' '+addr)}`,'_blank');toast('🗺️ Navigation opened!','info');}
+function viewCenter(id){
+  const c=evacCenters.find(x=>x.id===id);if(!c)return;
+  const pct=Math.round(c.occ/c.cap*100);
+  showModal('🏫 '+c.name,`<div style="font-size:12px;line-height:1.8;">
+    <div><span style="color:var(--muted);">Address:</span> ${c.addr}</div>
+    <div><span style="color:var(--muted);">Capacity:</span> ${c.cap.toLocaleString()}</div>
+    <div><span style="color:var(--muted);">Occupied:</span> ${c.occ.toLocaleString()} (${pct}%)</div>
+    <div><span style="color:var(--muted);">Available:</span> <strong style="color:${pct>=95?'var(--red)':'var(--green)'}">${(c.cap-c.occ).toLocaleString()}</strong></div>
+    <div style="margin-top:8px;"><div class="cap-bar"><div class="cap-fill" style="width:${pct}%;background:${pct>=95?'var(--red)':pct>=70?'var(--yellow)':'var(--green)'};"></div></div></div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px;">${pct}% occupied</div>
+  </div>`,[{label:'🗺️ Navigate',cls:'gr',action:`navigateTo('${c.name}','${c.addr}');closeModal()`}]);
+}
+function addEvacCenter(){
+  showFormModal('➕ Add Evacuation Center',`
+    <div class="fgrp"><label class="flbl">Center Name</label><input id="nec-name" class="finp" placeholder="e.g. Danao City Hall"></div>
+    <div class="fgrp"><label class="flbl">Address</label><input id="nec-addr" class="finp" placeholder="Brgy. Poblacion, Danao City"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="fgrp"><label class="flbl">Capacity</label><input id="nec-cap" class="finp" type="number" placeholder="800"></div>
+      <div class="fgrp"><label class="flbl">Occupancy</label><input id="nec-occ" class="finp" type="number" placeholder="0"></div>
+    </div>`,
+    ()=>{
+      const name=document.getElementById('nec-name')?.value?.trim();
+      const addr=document.getElementById('nec-addr')?.value?.trim();
+      const cap=parseInt(document.getElementById('nec-cap')?.value)||0;
+      const occ=parseInt(document.getElementById('nec-occ')?.value)||0;
+      if(!name||!addr||!cap){toast('Fill in all required fields','error');return;}
+      evacCenters.push({id:evacCenters.length+10,name,addr,cap,occ,status:occ>=cap?'full':occ/cap>.85?'near':'open'});
+      renderEvacList();closeModal();toast('✅ '+name+' added','success');
+    }
+  );
+}
+function editEvacCenter(id){
+  const c=evacCenters.find(x=>x.id===id);if(!c)return;
+  showFormModal('✏️ Edit: '+c.name,`
+    <div class="fgrp"><label class="flbl">Occupancy</label><input id="edit-occ" class="finp" type="number" value="${c.occ}"></div>
+    <div class="fgrp"><label class="flbl">Status</label><select id="edit-status" class="fsel"><option value="open" ${c.status==='open'?'selected':''}>Open</option><option value="near" ${c.status==='near'?'selected':''}>Near Full</option><option value="full" ${c.status==='full'?'selected':''}>Full</option></select></div>`,
+    ()=>{
+      c.occ=parseInt(document.getElementById('edit-occ')?.value)||c.occ;
+      c.status=document.getElementById('edit-status')?.value||c.status;
+      renderEvacList();updateDashboardStats();closeModal();toast('✅ Center updated','success');
+    }
+  );
+}
+
+// ── MAPS ──
+function mapIcon(color,emoji,sz=14){return L.divIcon({className:'',html:`<div style="background:${color};width:${sz+10}px;height:${sz+10}px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,.4);font-size:${sz}px;">${emoji}</div>`,iconSize:[sz+10,sz+10],iconAnchor:[(sz+10)/2,(sz+10)/2]});}
+function setMapTab(tab,btn){
+  document.querySelectorAll('#scr-map .tsw-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('map-incidents-pane').style.display=tab==='incidents'?'':'none';
+  document.getElementById('map-evac-pane').style.display=tab==='evac'?'':'none';
+  setTimeout(()=>{
+    if(tab==='incidents'&&mainMap)mainMap.invalidateSize();
+    if(tab==='evac'&&evacMap)evacMap.invalidateSize();
+  },100);
+}
+function addBaseMapLayers(map){
+  L.polygon([[10.348,123.920],[10.365,123.920],[10.365,123.940],[10.348,123.940]],{color:'#E8271A',fillColor:'#E8271A',fillOpacity:.3,weight:2}).addTo(map).bindPopup('<b>🔴 Tipolo-Subangdaku — FLOODED</b>');
+  L.polygon([[10.278,123.855],[10.298,123.855],[10.298,123.875],[10.278,123.875]],{color:'#F97316',fillColor:'#F97316',fillOpacity:.3,weight:2}).addTo(map).bindPopup('<b>🟠 Inayawan — High Risk</b>');
+  [[10.3157,123.8854,'Cebu City Sports Center','2,300/2,500'],[10.3522,123.9310,'Mandaue City Gym','1,800/3,000'],[10.3078,123.9495,'Lapu-Lapu CH','900/900 FULL'],[10.2448,123.8496,'Talisay Gymnasium','750/1,500'],[10.3880,123.9530,'Consolacion MH','380/1,000']].forEach(e=>L.marker([e[0],e[1]],{icon:mapIcon('#22C55E','🏫')}).addTo(map).bindPopup('<b>'+e[2]+'</b><br>'+e[3]));
+  incidents.forEach(i=>{
+    const coords=[[10.356,123.930],[10.315,123.885],[10.307,123.948],[10.288,123.862],[10.349,123.928],[10.290,123.862],[10.308,123.950],[10.278,123.862]];
+    const idx=incidents.indexOf(i);
+    const c=coords[idx%coords.length];
+    L.marker(c,{icon:mapIcon('#E8271A','🚨')}).addTo(map).bindPopup('<b>'+i.icon+' '+i.title+'</b><br>📍 '+i.loc+'<br><span style="color:'+(i.status==='resolved'?'#22C55E':i.status==='responded'?'#0EA5E9':'#F97316')+'">'+i.status+'</span>');
+  });
+}
+function initMaps(){
+  if(!mainMap){
+    const el=document.getElementById('map-main');if(!el)return;
+    mainMap=L.map('map-main',{scrollWheelZoom:false}).setView(C,12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:18}).addTo(mainMap);
+    addBaseMapLayers(mainMap);
+  } else mainMap.invalidateSize();
+  if(!evacMap){
+    const el=document.getElementById('map-evac');if(!el)return;
+    evacMap=L.map('map-evac',{scrollWheelZoom:false}).setView(C,12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:18}).addTo(evacMap);
+    L.rectangle([[10.348,123.920],[10.365,123.940]],{color:'#E8271A',fillOpacity:.35,weight:2}).addTo(evacMap).bindPopup('<b>🔴 Tipolo — FLOODED</b>');
+    evacCenters.forEach((c,i)=>{
+      const lats=[10.3157,10.3522,10.3078,10.2448,10.3880],lngs=[123.8854,123.9310,123.9495,123.8496,123.9530];
+      const col=c.status==='full'?'#E8271A':c.status==='near'?'#F97316':'#22C55E';
+      L.marker([lats[i],lngs[i]],{icon:mapIcon(col,'🏫')}).addTo(evacMap).bindPopup('<b>'+c.name+'</b><br>'+c.occ+'/'+c.cap+' · '+c.status);
+    });
+  } else evacMap.invalidateSize();
+}
+function initRespMap(){
+  if(!respMap){
+    const el=document.getElementById('map-resp-field');if(!el)return;
+    respMap=L.map('map-resp-field',{scrollWheelZoom:false}).setView([10.3522,123.9310],14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:18}).addTo(respMap);
+    L.marker([10.3522,123.9310],{icon:mapIcon('#3B82F6','🚒',16)}).addTo(respMap).bindPopup('<b>📍 My Location — BFP Unit Alpha</b>');
+    L.marker([10.3567,123.9317],{icon:mapIcon('#E8271A','🆘',16)}).addTo(respMap).bindPopup('<b>🆘 Tipolo Flash Flood</b><br>3 families trapped');
+    L.polyline([[10.3522,123.9310],[10.3567,123.9317]],{color:'#F97316',weight:3,dashArray:'8,4'}).addTo(respMap);
+    incidents.forEach(i=>{if(i.status==='responded'&&i.responder===responders[0].name){L.marker([10.3567,123.9317],{icon:mapIcon('#E8271A','🆘')}).addTo(respMap).bindPopup('<b>'+i.icon+' '+i.title+'</b><br>📍 '+i.loc);}});
+  } else respMap.invalidateSize();
+}
+
+// ── INCIDENT FEED (ADMIN) ──
+function renderIncidents(){
+  const feed=document.getElementById('incidents-feed');if(!feed)return;
+  const ft=document.getElementById('inc-filter-type')?.value||'all';
+  const fs=document.getElementById('inc-filter-sev')?.value||'all';
+  let list=incidents.filter(i=>(ft==='all'||i.type===ft)&&(fs==='all'||i.sev===fs));
+  if(!list.length){feed.innerHTML='<div class="empty-s"><div class="ei">🔍</div><div class="es">No incidents match filter.</div></div>';return;}
+  feed.innerHTML=list.map(i=>`
+    <div class="inc-row" id="inc-${i.id}">
+      <div class="inc-ic ${i.type||'other'}">${i.icon}</div>
+      <div class="inc-meta">
+        <div class="inc-ttl">${i.title}</div>
+        <div class="inc-loc">📍 ${i.loc}</div>
+        <div class="inc-tm">${timeAgo(i.time)} · #${i.id} · <span style="color:${statusColor(i.status)}">${i.status==='resolved'?'✅ Resolved':i.status==='responded'?'🚒 Responded':'⏳ Active'}</span>${i.responder?' · <span style="color:var(--muted);font-size:9px;">'+i.responder+'</span>':''}</div>
+      </div>
+      <div class="inc-right">
+        <span class="bx ${sevClass(i.sev)}">${i.sev}</span>
+        ${i.status==='active'?`<button class="fbtn sm" style="width:auto;padding:5px 9px;" onclick="adminDispatch(${i.id})">🚀 Dispatch</button>`:i.status==='responded'?`<button class="fbtn gr sm" style="width:auto;padding:5px 9px;" onclick="resolveIncident(${i.id})">✅ Resolve</button>`:'<button class="fbtn ghost sm" style="width:auto;padding:5px 9px;" disabled>Done</button>'}
+        <button class="fbtn ghost sm" style="width:auto;padding:5px 9px;" onclick="viewIncidentDetail(${i.id})">View →</button>
+      </div>
+    </div>`).join('');
+}
+function renderAdminSummary(){
+  const el=document.getElementById('admin-summary');if(!el)return;
+  const counts={flood:0,typhoon:0,fire:0,medical:0};
+  incidents.forEach(i=>{if(counts[i.type]!==undefined)counts[i.type]++;});
+  const labels={flood:'🌊 Flood',typhoon:'🌀 Typhoon',fire:'🔥 Fire',medical:'🏥 Medical'};
+  el.innerHTML=Object.entries(counts).map(([k,v])=>`<div class="sum-row"><span>${labels[k]}</span><span class="sum-val" style="color:var(--orange)">${v}</span></div>`).join('')
+    +`<div class="sum-row" style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);"><span>✅ Resolved today</span><span class="sum-val" style="color:var(--green)">14</span></div>`
+    +`<div class="sum-row" style="background:rgba(232,39,26,.08);border:1px solid rgba(232,39,26,.2);"><span>⏳ Still active</span><span class="sum-val" style="color:var(--red)">${incidents.filter(i=>i.status==='active').length}</span></div>`;
+}
+function adminDispatch(id){
+  const inc=incidents.find(x=>x.id===id);if(!inc)return;
+  const avail=responders.filter(r=>r.status==='available');
+  if(!avail.length){toast('No available responders!','error');return;}
+  showFormModal('🚀 Dispatch Responder',`
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Incident: <strong style="color:var(--text);">${inc.title}</strong></div>
+    <div class="fgrp"><label class="flbl">Assign Responder</label>
+      <select id="dispatch-sel" class="fsel">${avail.map(r=>`<option value="${r.id}">${r.name} (${r.type}) — ${r.area}</option>`).join('')}</select>
+    </div>`,
+    ()=>{
+      const rid=document.getElementById('dispatch-sel')?.value;
+      const r=responders.find(x=>x.id===rid);if(!r)return;
+      r.status='deployed';r.assignments.push(id);inc.status='responded';inc.responder=r.name;
+      renderIncidents();renderResponderBoard();updateDashboardStats();
+      closeModal();toast('🚀 '+r.name+' dispatched to #'+id,'success');
+    }
+  );
+}
+function resolveIncident(id){
+  const i=incidents.find(x=>x.id===id);if(!i)return;
+  i.status='resolved';
+  const r=responders.find(x=>x.name===i.responder);
+  if(r){r.assignments=r.assignments.filter(a=>a!==id);if(!r.assignments.length)r.status='available';}
+  renderIncidents();renderResponderBoard();updateDashboardStats();toast('✅ Incident #'+id+' resolved','success');
+}
+function viewIncidentDetail(id){
+  const i=incidents.find(x=>x.id===id);if(!i)return;
+  showModal(`${i.icon} Incident #${i.id}`,`<div style="font-size:12px;line-height:1.8;">
+    <div><span style="color:var(--muted);">Type:</span> ${i.icon} ${i.type}</div>
+    <div><span style="color:var(--muted);">Severity:</span> <span class="bx ${sevClass(i.sev)}">${i.sev}</span></div>
+    <div><span style="color:var(--muted);">Title:</span> <strong>${i.title}</strong></div>
+    <div><span style="color:var(--muted);">Location:</span> 📍 ${i.loc}</div>
+    ${i.desc?`<div><span style="color:var(--muted);">Description:</span> ${i.desc}</div>`:''}
+    ${i.needs?.length?`<div><span style="color:var(--muted);">Needs:</span> ${i.needs.join(', ')}</div>`:''}
+    <div><span style="color:var(--muted);">Reported:</span> ${timeAgo(i.time)} by ${i.reportedBy||'Citizen'}</div>
+    <div><span style="color:var(--muted);">Status:</span> <span style="color:${statusColor(i.status)};">${i.status}</span>${i.responder?' — '+i.responder:''}</div>
+  </div>`,i.status==='active'?[{label:'🚀 Dispatch Now',cls:'red',action:`adminDispatch(${id});closeModal()`}]:[]);
+}
+
+// ── RESPONDER BOARD ──
+function renderResponderBoard(){
+  const el=document.getElementById('responder-board');if(!el)return;
+  el.innerHTML=responders.map(r=>`
+    <div class="asgn-card">
+      <div class="asgn-hd">
+        <div class="asgn-av" style="background:${r.status==='available'?'linear-gradient(135deg,var(--green),var(--sky))':r.status==='deployed'?'linear-gradient(135deg,var(--red),var(--orange))':'linear-gradient(135deg,var(--muted2),var(--muted))'}">${r.name.substring(0,2)}</div>
+        <div style="flex:1;">
+          <div class="asgn-nm">${r.name}</div>
+          <div class="asgn-rl">${r.type} · ${r.area}</div>
+        </div>
+        <span class="bx ${r.status==='available'?'open':r.status==='deployed'?'full':'pend'}">${r.status.toUpperCase()}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">Assignments: ${r.assignments.length}</div>
+      <div class="asgn-acts" style="margin-top:8px;">
+        ${r.status!=='deployed'?`<button class="abtn acc" onclick="adminAssignUnit('${r.id}')">Assign to Incident</button>`:`<button class="abtn or" onclick="recallUnit('${r.id}')">Recall Unit</button>`}
+      </div>
+    </div>`).join('');
+}
+function adminAssignUnit(rid){
+  const r=responders.find(x=>x.id===rid);
+  const unassigned=incidents.filter(i=>i.status==='active');
+  if(!unassigned.length){toast('No unassigned incidents','info');return;}
+  showFormModal('Assign '+r.name,`
+    <div class="fgrp"><label class="flbl">Select Incident</label>
+      <select id="assign-sel" class="fsel">${unassigned.map(i=>`<option value="${i.id}">#${i.id} — ${i.title.substring(0,38)}... (${i.sev})</option>`).join('')}</select>
+    </div>`,
+    ()=>{
+      const incId=parseInt(document.getElementById('assign-sel')?.value);
+      const inc=incidents.find(x=>x.id===incId);
+      if(!inc||!r){closeModal();return;}
+      r.status='deployed';r.assignments.push(incId);inc.status='responded';inc.responder=r.name;
+      renderIncidents();renderResponderBoard();updateDashboardStats();
+      closeModal();toast('🚀 '+r.name+' assigned to #'+incId,'success');
+    }
+  );
+}
+function recallUnit(rid){
+  const r=responders.find(x=>x.id===rid);if(!r)return;
+  r.assignments.forEach(id=>{const i=incidents.find(x=>x.id===id);if(i&&i.status==='responded')i.status='resolved';});
+  r.assignments=[];r.status='available';
+  renderResponderBoard();renderIncidents();updateDashboardStats();
+  toast('✅ '+r.name+' recalled','success');
+}
+function addResponderUnit(){
+  showFormModal('➕ Add Responder Unit',`
+    <div class="fgrp"><label class="flbl">Unit Name</label><input id="nu-name" class="finp" placeholder="e.g. BFP Unit Charlie"></div>
+    <div class="fgrp"><label class="flbl">Type</label><select id="nu-type" class="fsel"><option>BFP</option><option>CDRRMO</option><option>Medical</option><option>Rescue</option></select></div>
+    <div class="fgrp"><label class="flbl">Area of Coverage</label><input id="nu-area" class="finp" placeholder="e.g. Cebu City"></div>`,
+    ()=>{
+      const name=document.getElementById('nu-name')?.value?.trim();
+      const type=document.getElementById('nu-type')?.value;
+      const area=document.getElementById('nu-area')?.value?.trim();
+      if(!name||!area){toast('Fill in all fields','error');return;}
+      responders.push({id:'r'+Date.now(),name,type,area,status:'available',assignments:[]});
+      renderResponderBoard();closeModal();toast('✅ '+name+' added','success');
+    }
+  );
+}
+
+// ── ADMIN: RELIEF ──
+function renderReliefList(){
+  const el=document.getElementById('relief-list');if(!el)return;
+  el.innerHTML=reliefLogs.map(r=>{
+    const pct=Math.round(r.distributed/r.allocated*100);
+    const bc=pct>=100?'var(--green)':pct>=60?'var(--orange)':'var(--red)';
+    return `<div class="rel-item">
+      <div class="rel-h"><div><div class="rel-name">${r.item}</div><div class="rel-area">📍 ${r.area}</div></div><span class="bx ${r.status==='complete'?'open':'pend'}">${r.status==='complete'?'✅ Done':'⏳ Active'}</span></div>
+      <div class="rel-nums">
+        <div class="rel-num"><div class="rel-nv">${r.allocated.toLocaleString()}</div><div class="rel-nl">Allocated</div></div>
+        <div class="rel-num"><div class="rel-nv" style="color:var(--green)">${r.distributed.toLocaleString()}</div><div class="rel-nl">Distributed</div></div>
+        <div class="rel-num"><div class="rel-nv" style="color:var(--sky)">${(r.allocated-r.distributed).toLocaleString()}</div><div class="rel-nl">Remaining</div></div>
+        <div class="rel-num"><div class="rel-nv" style="color:${bc}">${pct}%</div><div class="rel-nl">Progress</div></div>
+      </div>
+      <div class="cap-bar"><div class="cap-fill" style="width:${pct}%;background:${bc};"></div></div>
+      <div style="margin-top:8px;"><button class="fbtn ghost sm" style="width:auto;" onclick="updateReliefLog(${r.id})">✏️ Update</button></div>
+    </div>`;
+  }).join('');
+  initReliefChart();
+}
+function logDistribution(){
+  showFormModal('📦 Log Relief Distribution',`
+    <div class="fgrp"><label class="flbl">Relief Item</label><select id="rl-item" class="fsel"><option>🍚 Food Packs</option><option>💧 Bottled Water</option><option>🏥 Medical Kits</option><option>🛏️ Sleeping Kits</option><option>👗 Clothing</option><option>🧴 Hygiene Kits</option></select></div>
+    <div class="fgrp"><label class="flbl">Target Area</label><input id="rl-area" class="finp" placeholder="e.g. Danao City"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="fgrp"><label class="flbl">Allocated</label><input id="rl-alloc" class="finp" type="number"></div>
+      <div class="fgrp"><label class="flbl">Distributed</label><input id="rl-dist" class="finp" type="number" placeholder="0"></div>
+    </div>`,
+    ()=>{
+      const item=document.getElementById('rl-item')?.value;
+      const area=document.getElementById('rl-area')?.value?.trim();
+      const alloc=parseInt(document.getElementById('rl-alloc')?.value)||0;
+      const dist=parseInt(document.getElementById('rl-dist')?.value)||0;
+      if(!area||!alloc){toast('Fill in all fields','error');return;}
+      reliefLogs.push({id:200+reliefLogs.length,item,area,allocated:alloc,distributed:dist,status:dist>=alloc?'complete':'in-progress'});
+      renderReliefList();closeModal();toast('📦 Log added — '+area,'success');
+    }
+  );
+}
+function updateReliefLog(id){
+  const r=reliefLogs.find(x=>x.id===id);if(!r)return;
+  showFormModal('✏️ Update: '+r.area,`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="fgrp"><label class="flbl">Allocated</label><input id="upd-alloc" class="finp" type="number" value="${r.allocated}"></div>
+      <div class="fgrp"><label class="flbl">Distributed</label><input id="upd-dist" class="finp" type="number" value="${r.distributed}"></div>
+    </div>`,
+    ()=>{
+      r.allocated=parseInt(document.getElementById('upd-alloc')?.value)||r.allocated;
+      r.distributed=parseInt(document.getElementById('upd-dist')?.value)||r.distributed;
+      r.status=r.distributed>=r.allocated?'complete':'in-progress';
+      renderReliefList();closeModal();toast('📦 Relief log updated','success');
+    }
+  );
+}
+let reliefChartInst=null;
+function initReliefChart(){
+  const el=document.getElementById('reliefChart');if(!el)return;
+  if(reliefChartInst){reliefChartInst.destroy();reliefChartInst=null;}
+  const co={color:'rgba(255,255,255,.6)',gridColor:'rgba(255,255,255,.05)'};
+  reliefChartInst=new Chart(el,{type:'bar',data:{
+    labels:reliefLogs.map(r=>r.item.replace(/^[^ ]+ /,'')),
+    datasets:[{label:'Allocated',data:reliefLogs.map(r=>r.allocated),backgroundColor:'rgba(59,130,246,.4)',borderRadius:4},{label:'Distributed',data:reliefLogs.map(r=>r.distributed),backgroundColor:'#22C55E',borderRadius:4}]},
+    options:{responsive:true,plugins:{legend:{labels:{color:co.color}},tooltip:{backgroundColor:'#1E242C'}},scales:{x:{ticks:{color:co.color},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}
+  });
+}
+
+// ── ADMIN TAB SWITCHING ──
+function setAdminTab(tab,btn){
+  document.querySelectorAll('#admin-tsw .tsw-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  ['incidents','dispatch','relief','alerts'].forEach(t=>{const el=document.getElementById('admin-pane-'+t);if(el)el.style.display=(t===tab)?'':'none';});
+  if(tab==='incidents'){renderIncidents();updateDashboardStats();}
+  if(tab==='dispatch'){renderResponderBoard();}
+  if(tab==='relief'){renderReliefList();}
+  if(tab==='alerts'){renderSMSLog();}
+}
+
+// ── SMS ──
+function sendSMS(){
+  const type=document.getElementById('sms-type')?.value||'Emergency';
+  const region=document.getElementById('sms-region')?.value||'All Region VII';
+  const body=document.getElementById('sms-compose')?.value?.trim();
+  if(!body){toast('Please write a message','error');return;}
+  const reach=region.includes('All')?'186,000':region.includes('Cebu City')?'48,200':region.includes('Mandaue')?'28,000':'10,800';
+  const time=new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+  smsLog.unshift({type:'alert',label:type.toUpperCase(),time,body,recipients:reach+' · '+region});
+  renderSMSLog();document.getElementById('sms-compose').value='';
+  toast('📱 SMS broadcast — '+reach+' subscribers','success');
+}
+function scheduleSMS(){
+  showFormModal('🗓️ Schedule SMS',`<div class="fgrp"><label class="flbl">Schedule Date & Time</label><input id="sched-dt" class="finp" type="datetime-local"></div>`,
+    ()=>{const dt=document.getElementById('sched-dt')?.value;if(!dt){toast('Select a date and time','error');return;}closeModal();toast('🗓️ Scheduled for '+new Date(dt).toLocaleString('en-PH'),'info');}
+  );
+}
+function renderSMSLog(){
+  const el=document.getElementById('sms-log');if(!el)return;
+  if(!smsLog.length){el.innerHTML='<div class="empty-s"><div class="ei">📭</div><div class="es">No SMS sent yet.</div></div>';return;}
+  el.innerHTML=smsLog.map((s,i)=>`
+    <div class="sms-item">
+      <div class="sms-hd"><span class="sms-type ${s.type}">● ${s.label}</span><div style="display:flex;align-items:center;gap:6px;"><span class="sms-tm">${s.time}</span><button class="sms-del" onclick="smsLog.splice(${i},1);renderSMSLog()">✕</button></div></div>
+      <div class="sms-body">${s.body}</div>
+      <div class="sms-rcpt">✅ Delivered to ${s.recipients}</div>
+    </div>`).join('');
+}
+function toggleNotif(key,el){
+  const isOn=el.classList.contains('on');
+  el.classList.toggle('on',!isOn);el.classList.toggle('off',isOn);
+  toast((isOn?'🔕 Disabled':'🔔 Enabled')+' '+key+' notifications',isOn?'info':'success',2000);
+}
+document.getElementById('sms-compose')?.addEventListener('input',function(){
+  const l=this.value.length;const cnt=document.getElementById('sms-count');if(cnt)cnt.textContent=l+' chars ('+Math.ceil(l/160||1)+' SMS)';
+});
+
+// ── RESPONDER DASHBOARD ──
+let respAvail=true;
+function toggleRespStatus(){
+  respAvail=!respAvail;
+  const dot=document.getElementById('resp-dot-big');const txt=document.getElementById('resp-status-txt');
+  if(respAvail){dot.style.background='var(--green)';txt.textContent='Status: Available';toast('✅ Status: Available for dispatch','success');}
+  else{dot.style.background='var(--orange)';txt.textContent='Status: Off Duty';toast('⚠️ Status: Off Duty','warn');}
+}
+function renderRespDashboard(){
+  renderRespAssignments();renderRespIncoming();renderRespLog();populateRespSelect();
+}
+function renderRespAssignments(){
+  const el=document.getElementById('resp-assignments');if(!el)return;
+  const mine=incidents.filter(i=>i.responder===responders[0].name&&i.status==='responded');
+  const badge=document.getElementById('asgn-badge');if(badge)badge.textContent=mine.length;
+  document.getElementById('resp-stat-asgn').textContent=mine.length;
+  if(!mine.length){el.innerHTML='<div class="empty-s" style="padding:16px;"><div class="ei">✅</div><div class="es">No active assignments.</div></div>';return;}
+  el.innerHTML=mine.map(i=>`
+    <div class="asgn-card">
+      <div class="asgn-hd">
+        <div class="asgn-av">${i.icon}</div>
+        <div style="flex:1;"><div class="asgn-nm">${i.title}</div><div class="asgn-rl">📍 ${i.loc}</div></div>
+        <span class="bx ${sevClass(i.sev)}">${i.sev}</span>
+      </div>
+      <div class="asgn-det">${i.desc||''}</div>
+      <div class="asgn-acts">
+        <button class="abtn acc" onclick="respResolve(${i.id})">✅ Mark Resolved</button>
+        <button class="abtn nav" onclick="respNavigate('${i.loc}')">🗺️ Navigate</button>
+      </div>
+    </div>`).join('');
+}
+function renderRespIncoming(){
+  const el=document.getElementById('resp-incoming');if(!el)return;
+  const newD=responders[0]?.lastDispatchNote?[{note:responders[0].lastDispatchNote}]:[];
+  if(!newD.length){el.innerHTML='<div class="empty-s" style="padding:14px;"><div class="ei">📭</div><div class="es">No new dispatch orders.</div></div>';return;}
+  el.innerHTML=newD.map(d=>`
+    <div class="ni-item warn">
+      <div class="ni-t">🚀 New Dispatch Order</div>
+      <div class="ni-m" style="margin-top:3px;">${d.note}</div>
+      <div style="margin-top:7px;display:flex;gap:6px;">
+        <button class="fbtn gr sm" style="width:auto;" onclick="acknowledgeDispatch(this)">✅ Acknowledge</button>
+        <button class="fbtn ghost sm" style="width:auto;" onclick="respNavigate('')">🗺️ Navigate</button>
+      </div>
+    </div>`).join('');
+}
+function acknowledgeDispatch(btn){
+  btn.closest('.ni-item').className='ni-item green';
+  btn.textContent='Acknowledged';btn.disabled=true;
+  toast('✅ Acknowledged — en route','success');
+  respLog.unshift({id:++responderLogIdCounter,time:new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}),action:'Acknowledged dispatch. En route to assignment.',status:'en_route'});
+  renderRespLog();
+}
+function respResolve(id){
+  const i=incidents.find(x=>x.id===id);if(!i)return;
+  i.status='resolved';
+  const r=responders[0];r.assignments=r.assignments.filter(a=>a!==id);if(!r.assignments.length)r.status='available';
+  const done=document.getElementById('resp-stat-done');if(done)done.textContent=parseInt(done.textContent)+1;
+  respLog.unshift({id:++responderLogIdCounter,time:new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}),action:'✅ Resolved: '+i.title+' — '+i.loc,status:'resolved'});
+  renderRespAssignments();renderRespLog();updateDashboardStats();
+  toast('✅ Incident resolved — '+i.loc,'success');
+}
+function respNavigate(loc){
+  window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc+', Cebu Philippines')}`,'_blank');
+  toast('🗺️ Navigation opened','info');
+}
+function populateRespSelect(){
+  const el=document.getElementById('resp-asgn-sel');if(!el)return;
+  const mine=incidents.filter(i=>i.responder===responders[0].name&&i.status==='responded');
+  el.innerHTML=mine.length?mine.map(i=>`<option value="${i.id}">#${i.id} — ${i.title.substring(0,40)}...</option>`).join(''):'<option>No active assignments</option>';
+}
+function submitFieldReport(){
+  const incId=document.getElementById('resp-asgn-sel')?.value;
+  const statusKey=document.getElementById('resp-status-upd')?.value;
+  const notes=document.getElementById('resp-notes')?.value?.trim();
+  if(!notes){toast('Please add notes','error');return;}
+  const sl={en_route:'🚒 En Route',on_scene:'📍 On Scene',rescue_ops:'⛑️ Rescue Ops',needs_support:'🆘 Needs Support',wrapping_up:'🔄 Wrapping Up',resolved:'✅ Resolved'};
+  respLog.unshift({id:++responderLogIdCounter,time:new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}),action:(sl[statusKey]||statusKey)+': '+notes,status:statusKey});
+  renderRespLog();document.getElementById('resp-notes').value='';
+  if(statusKey==='resolved'){respResolve(parseInt(incId));return;}
+  toast('📤 Field update sent to CDRRMO','success');
+}
+function renderRespLog(){
+  const el=document.getElementById('resp-log-list');if(!el)return;
+  if(!respLog.length){el.innerHTML='<div class="empty-s"><div class="ei">📋</div><div class="es">No activity logged yet.</div></div>';return;}
+  el.innerHTML=respLog.map(l=>`
+    <div style="display:flex;align-items:flex-start;gap:9px;padding:9px 10px;background:var(--bg4);border-radius:8px;border:1px solid var(--border);margin-bottom:6px;">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--muted2);flex-shrink:0;margin-top:1px;">${l.time}</div>
+      <div style="flex:1;font-size:11px;">${l.action}</div>
+      <span class="bx ${l.status==='resolved'?'open':l.status==='en_route'?'pend':'info'}" style="font-size:8px;flex-shrink:0;">${l.status}</span>
+    </div>`).join('');
+}
+function exportLog(){
+  const csv='Time,Action,Status\n'+respLog.map(l=>`"${l.time}","${l.action}","${l.status}"`).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='responder-log.csv';a.click();
+  toast('📋 Activity log exported','success');
+}
+
+// ── SOS ──
+let sosCountdown=null;
+function openSOS(){
+  const b=document.getElementById('sos-confirm-btn');b.textContent='Confirm in 5s…';b.disabled=true;
+  let sec=5;
+  document.getElementById('sos-cnt').textContent=sec;
+  document.getElementById('sos-mo').classList.add('open');
+  sosCountdown=setInterval(()=>{sec--;document.getElementById('sos-cnt').textContent=sec;if(sec<=0){clearInterval(sosCountdown);b.textContent='🆘 CONFIRM SOS';b.disabled=false;}else b.textContent='Confirm in '+sec+'s…';},1000);
+}
+function cancelSOS(){if(sosCountdown)clearInterval(sosCountdown);document.getElementById('sos-mo').classList.remove('open');toast('SOS cancelled.','info');}
+function confirmSOS(){
+  cancelSOS();
+  const inc={id:++incidentIdCounter,icon:'🆘',type:'medical',title:'SOS EMERGENCY — Citizen Alert',loc:'Cebu City (GPS: 10.3157°N, 123.8854°E)',time:Date.now(),sev:'critical',status:'active',responder:'',needs:['Rescue Team','Medical'],desc:'Emergency SOS sent via mobile app.',reportedBy:currentUser?.name||'Citizen'};
+  incidents.unshift(inc);myReports.unshift(inc);
+  syncQueue.unshift({id:Date.now(),label:'SOS Alert — GPS-tagged emergency',time:'just now'});
+  updateDashboardStats();renderHome();
+  toast('🆘 SOS SENT! CDRRMO notified — ETA ~8 mins. Stay safe!','error',8000);
+}
+
+// ── OFFLINE ──
+function updateStorageStats(){
+  const el=document.getElementById('stor-reports');if(el)el.textContent=incidents.length;
+  const el2=document.getElementById('stor-relief');if(el2)el2.textContent=reliefLogs.length;
+  const pct=Math.min(24+incidents.length*0.5,95).toFixed(0);
+  const bar=document.getElementById('stor-fill');if(bar)bar.style.width=pct+'%';
+  const used=document.getElementById('stor-used');if(used)used.textContent=Math.round(pct*0.24)+' MB';
+  const ls=document.getElementById('last-sync');if(ls)ls.textContent=new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+}
+function renderSyncQueue(){
+  const el=document.getElementById('sync-queue-list');const badge=document.getElementById('sync-badge');if(!el)return;
+  if(!syncQueue.length){el.innerHTML='<div class="empty-s" style="padding:14px;"><div class="ei">✅</div><div class="es">All data synced.</div></div>';if(badge)badge.textContent='Synced';return;}
+  if(badge)badge.textContent=syncQueue.length+' Pending';
+  el.innerHTML=syncQueue.map((item,i)=>`
+    <div class="sq-item">
+      <div class="sq-dot"></div>
+      <div class="sq-lbl">${item.label}</div>
+      <div class="sq-tm">${item.time}</div>
+      <button onclick="syncQueue.splice(${i},1);renderSyncQueue();updateStorageStats();" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:11px;">✕</button>
+    </div>`).join('');
+}
+function syncNow(){
+  if(!syncQueue.length){toast('✅ Everything is already synced!','success');return;}
+  const btn=document.getElementById('sync-btn');if(btn){btn.textContent='⏳ Syncing…';btn.disabled=true;}
+  const items=[...syncQueue];let i=0;
+  const interval=setInterval(()=>{
+    if(i<items.length){toast('🔄 Synced: '+items[i].label,'info',1800);syncQueue.shift();renderSyncQueue();i++;}
+    else{clearInterval(interval);if(btn){btn.textContent='✅ All Synced';btn.disabled=false;setTimeout(()=>{btn.textContent='🔄 Sync Now';},3000);}updateStorageStats();toast('✅ All items synced!','success');}
+  },700);
+}
+function checkConn(){
+  const online=navigator.onLine;
+  const banner=document.getElementById('offline-banner');
+  if(online){if(banner)banner.innerHTML='<span>✅</span><div><h4>Connected — Live Data Active</h4><p>AgapayAlert is online. All data syncing in real-time.</p></div><button class="fbtn ghost sm" style="width:auto;margin-left:auto;" onclick="checkConn()">Check</button>';toast('✅ Online — syncing data','success');setTimeout(syncNow,800);}
+  else{if(banner)banner.innerHTML='<span style="font-size:20px;">📵</span><div><h4>No Internet — Offline Mode Active</h4><p>Reports saved locally. Will sync when connection restores.</p></div>';toast('⚠️ No internet — offline mode','warning');}
+}
+function submitOfflineReport(){
+  const type=document.getElementById('offline-rep-type')?.value;
+  const loc=document.getElementById('offline-rep-loc')?.value?.trim();
+  const desc=document.getElementById('offline-rep-desc')?.value?.trim();
+  if(!loc){toast('Enter a location','error');return;}
+  if(!desc){toast('Add a description','error');return;}
+  syncQueue.push({id:Date.now(),label:type+' — '+loc,time:'just now'});
+  document.getElementById('offline-rep-loc').value='';document.getElementById('offline-rep-desc').value='';
+  renderSyncQueue();updateStorageStats();toast('💾 Report saved locally — will sync when online','success');
+}
+function offlineLogRelief(){
+  showFormModal('📦 Quick Relief Log (Offline)',`
+    <div class="fgrp"><select id="orl-item" class="fsel"><option>🍚 Food Packs</option><option>💧 Water</option><option>🏥 Medical Kits</option></select></div>
+    <div class="fgrp"><input id="orl-area" class="finp" placeholder="Distribution area"></div>
+    <div class="fgrp"><input id="orl-count" class="finp" type="number" placeholder="Number of items"></div>`,
+    ()=>{
+      const item=document.getElementById('orl-item')?.value;const area=document.getElementById('orl-area')?.value?.trim();const count=document.getElementById('orl-count')?.value;
+      if(!area||!count){toast('Fill in all fields','error');return;}
+      syncQueue.push({id:Date.now(),label:item+' distribution — '+count+' items · '+area,time:'just now'});
+      renderSyncQueue();updateStorageStats();closeModal();toast('💾 Relief log saved offline','success');
+    }
+  );
+}
+
+// ── GEO ──
+function renderGeoList(){
+  const el=document.getElementById('geo-list');if(!el)return;
+  el.innerHTML=geoData.map(g=>`
+    <div class="geo-item">
+      <div class="geo-ic">${g.icon}</div>
+      <div class="geo-info"><div class="geo-nm">${g.name}</div><div class="geo-tp">${g.type} · ${g.lgu}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div class="geo-coords">${g.coords}</div>
+        <button class="fbtn ghost sm" style="width:auto;padding:4px 8px;" onclick="copyCoords('${g.coords}')">📋 Copy</button>
+      </div>
+    </div>`).join('');
+}
+function copyCoords(coords){navigator.clipboard?.writeText(coords).then(()=>toast('📋 Copied: '+coords,'info',2000)).catch(()=>toast('Coords: '+coords,'info',3000));}
+
+// ── ANALYTICS ──
+function setAnalyticsTab(tab,btn){
+  document.querySelectorAll('#analytics-tsw .tsw-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  ['overview','incidents','relief','responders'].forEach(t=>{const el=document.getElementById('a-pane-'+t);if(el)el.style.display=(t===tab)?'':'none';});
+  setTimeout(()=>initChartsForTab(tab),120);
+}
+function initCharts(){initChartsForTab('overview');}
+function initChartsForTab(tab){
+  if(chartsInit[tab])return;chartsInit[tab]=true;
+  const co={color:'rgba(255,255,255,.6)',gridColor:'rgba(255,255,255,.05)'};
+  const tip={backgroundColor:'#1E242C',titleColor:'#fff',bodyColor:'rgba(255,255,255,.6)',borderColor:'rgba(255,255,255,.1)',borderWidth:1};
+  if(tab==='overview'){
+    const c1=document.getElementById('incidentChart');const c2=document.getElementById('typeChart');const c3=document.getElementById('reliefOvChart');const c4=document.getElementById('evacChart');
+    if(!c1||!c2||!c3||!c4)return;
+    chartInstances.incident=new Chart(c1,{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Incidents',data:[12,19,34,28,42,55,47],borderColor:'#E8271A',backgroundColor:'rgba(232,39,26,.08)',fill:true,tension:.4,pointBackgroundColor:'#E8271A',pointRadius:4},{label:'Resolved',data:[10,17,30,25,38,48,42],borderColor:'#22C55E',backgroundColor:'rgba(34,197,94,.06)',fill:true,tension:.4,pointBackgroundColor:'#22C55E',pointRadius:4}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+    chartInstances.type=new Chart(c2,{type:'doughnut',data:{labels:['Flood','Typhoon','Fire','Medical','Other'],datasets:[{data:[38,30,15,10,7],backgroundColor:['#3B82F6','#a78bfa','#F97316','#22C55E','#8B95A1'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,cutout:'62%',plugins:{legend:{position:'right',labels:{color:co.color,padding:10,font:{size:10}}},tooltip:tip}}});
+    chartInstances.reliefOv=new Chart(c3,{type:'bar',data:{labels:['Mandaue','Cebu City','Lapu-Lapu','Talisay','Consolacion'],datasets:[{label:'Food Packs',data:[3200,2100,1400,900,450],backgroundColor:'#F97316',borderRadius:4},{label:'Water',data:[1800,1200,800,500,300],backgroundColor:'#0EA5E9',borderRadius:4}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color,font:{size:9}},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+    chartInstances.evac=new Chart(c4,{type:'bar',data:{labels:['CCSC','Mandaue','Lapu-Lapu','Talisay','Consolacion'],datasets:[{label:'Occupied',data:[2300,1800,900,750,380],backgroundColor:'#E8271A',borderRadius:4},{label:'Available',data:[200,1200,0,750,620],backgroundColor:'#22C55E',borderRadius:4}]},options:{responsive:true,indexAxis:'y',plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{stacked:true,ticks:{color:co.color},grid:{color:co.gridColor}},y:{stacked:true,ticks:{color:co.color,font:{size:9}},grid:{color:co.gridColor}}}}});
+  }
+  if(tab==='incidents'){
+    const c1=document.getElementById('byDayChart');const c2=document.getElementById('byLguChart');const c3=document.getElementById('responseTimeChart');if(!c1||!c2||!c3)return;
+    chartInstances.byDay=new Chart(c1,{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Incidents',data:[24,18,32,29,36,48,50],backgroundColor:'rgba(232,39,26,.7)',borderRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+    chartInstances.byLgu=new Chart(c2,{type:'bar',data:{labels:['Cebu City','Mandaue','Lapu-Lapu','Talisay','Consolacion'],datasets:[{label:'Incidents',data:[62,45,38,24,18],backgroundColor:'rgba(59,130,246,.7)',borderRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color,font:{size:10}},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+    chartInstances.responseTime=new Chart(c3,{type:'bar',data:{labels:['0-5m','5-10m','10-15m','15-20m','20-30m','30+m'],datasets:[{label:'Responses',data:[12,28,35,18,8,4],backgroundColor:'rgba(34,197,94,.7)',borderRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+  }
+  if(tab==='relief'){
+    const c1=document.getElementById('reliefItemsChart');const c2=document.getElementById('reliefDailyChart');if(!c1||!c2)return;
+    chartInstances.reliefItems=new Chart(c1,{type:'bar',data:{labels:reliefLogs.map(r=>r.item.replace(/^[^ ]+ /,'')),datasets:[{label:'Allocated',data:reliefLogs.map(r=>r.allocated),backgroundColor:'rgba(59,130,246,.5)',borderRadius:4},{label:'Distributed',data:reliefLogs.map(r=>r.distributed),backgroundColor:'#22C55E',borderRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color,font:{size:9}},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+    chartInstances.reliefDaily=new Chart(c2,{type:'line',data:{labels:['Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7'],datasets:[{label:'Items Distributed',data:[800,1200,1600,2100,2600,3100,3500],borderColor:'#F97316',backgroundColor:'rgba(249,115,22,.08)',fill:true,tension:.4,pointBackgroundColor:'#F97316',pointRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+  }
+  if(tab==='responders'){
+    const c1=document.getElementById('unitResponseChart');const c2=document.getElementById('unitLoadChart');if(!c1||!c2)return;
+    chartInstances.unitResponse=new Chart(c1,{type:'bar',data:{labels:responders.map(r=>r.name.split(' ').slice(0,2).join(' ')),datasets:[{label:'Avg Response (min)',data:[8,12,15,11,7,9],backgroundColor:'rgba(249,115,22,.7)',borderRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color,font:{size:9}},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+    chartInstances.unitLoad=new Chart(c2,{type:'bar',data:{labels:responders.map(r=>r.name.split(' ').slice(0,2).join(' ')),datasets:[{label:'Incidents Handled',data:[12,8,6,9,3,5],backgroundColor:'rgba(139,92,246,.7)',borderRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:co.color}},tooltip:tip},scales:{x:{ticks:{color:co.color,font:{size:9}},grid:{color:co.gridColor}},y:{ticks:{color:co.color},grid:{color:co.gridColor}}}}});
+  }
+}
+function updateTrendChart(){
+  if(!chartInstances.incident)return;
+  const range=parseInt(document.getElementById('trend-range')?.value||'7');
+  const labels=range===7?['Mon','Tue','Wed','Thu','Fri','Sat','Sun']:range===14?['W1','W1','W2','W2','W2','W3','W3','W3','W4','W4','W4','W4','W4','W4']:Array.from({length:30},(_,i)=>'D'+(i+1));
+  const mkd=(n,a,b)=>Array.from({length:n},()=>Math.floor(Math.random()*(b-a)+a));
+  chartInstances.incident.data.labels=labels;
+  chartInstances.incident.data.datasets[0].data=mkd(labels.length,8,60);
+  chartInstances.incident.data.datasets[1].data=mkd(labels.length,6,55);
+  chartInstances.incident.update();
+  toast('📈 Chart updated to '+range+'-day view','info',1500);
+}
+function refreshAnalytics(){
+  chartsInit={};Object.values(chartInstances).forEach(c=>{if(c&&c.destroy)c.destroy();});chartInstances={};
+  const active=document.querySelector('#analytics-tsw .tsw-btn.active');
+  const t=active?active.textContent.toLowerCase().includes('overview')?'overview':active.textContent.toLowerCase().includes('incident')?'incidents':active.textContent.toLowerCase().includes('relief')?'relief':'responders':'overview';
+  initChartsForTab(t);toast('🔄 Analytics refreshed','success');
+}
+function exportChart(key){
+  const c=chartInstances[key];if(!c){toast('Chart not loaded','error');return;}
+  const a=document.createElement('a');a.href=c.toBase64Image();a.download='agapay-'+key+'.png';a.click();
+  toast('📊 Chart exported','success');
+}
+function exportReport(){
+  const csv=`AgapayAlert Report\n"Generated","${new Date().toLocaleString('en-PH')}"\n"Total Incidents","${incidents.length}"\n"Active","${incidents.filter(i=>i.status==='active').length}"\n"Resolved","${incidents.filter(i=>i.status==='resolved').length}"\n"Evacuation Centers","${evacCenters.length}"\n"Total Evacuees","${evacCenters.reduce((a,c)=>a+c.occ,0).toLocaleString()}"`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='agapayalert-report.csv';a.click();
+  toast('📋 CSV report exported','success');
+}
+
+// ── MODAL SYSTEM ──
+function showModal(title,bodyHtml,actions=[]){
+  document.getElementById('gen-mo-title').textContent=title;
+  document.getElementById('gen-mo-body').innerHTML=bodyHtml;
+  const footer=document.getElementById('gen-mo-footer');
+  footer.innerHTML=`<button class="mbtn ghost" onclick="closeModal()">Close</button>`;
+  actions.forEach(a=>{footer.innerHTML+=`<button class="mbtn ${a.cls}" onclick="${a.action}">${a.label}</button>`;});
+  document.getElementById('gen-mo').classList.add('open');
+}
+function showFormModal(title,bodyHtml,onConfirm){
+  document.getElementById('gen-mo-title').textContent=title;
+  document.getElementById('gen-mo-body').innerHTML=bodyHtml;
+  const footer=document.getElementById('gen-mo-footer');
+  footer.innerHTML=`<button class="mbtn ghost" onclick="closeModal()">Cancel</button><button class="mbtn red" id="fm-confirm">Confirm</button>`;
+  document.getElementById('fm-confirm').addEventListener('click',onConfirm);
+  document.getElementById('gen-mo').classList.add('open');
+}
+function closeModal(){document.getElementById('gen-mo').classList.remove('open');}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',()=>{
+  renderAll();
+  // SOS modal outside click
+  document.getElementById('sos-mo').addEventListener('click',e=>{if(e.target===document.getElementById('sos-mo'))cancelSOS();});
+});
+</script>
+</body></html>
